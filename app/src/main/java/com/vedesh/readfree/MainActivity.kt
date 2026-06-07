@@ -115,6 +115,8 @@ class MainActivity : AppCompatActivity() {
                 useWideViewPort = true
                 builtInZoomControls = true
                 displayZoomControls = false
+                // Respect HTTP cache-control headers; falls back to cache if offline
+                cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             }
 
             webViewClient = object : WebViewClient() {
