@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 class ListRepository(
     private val listDao: ListDao,
-    private val database: AppDatabase
+    private val database: AppDatabase,
 ) {
     suspend fun insert(list: ArticleList): Long = listDao.insert(list)
 
@@ -20,14 +20,17 @@ class ListRepository(
 
     fun getAllWithCounts(): Flow<List<ListWithCount>> = listDao.getAllWithCounts()
 
-    suspend fun addArticleToList(url: String, listId: Long) =
-        listDao.addArticleToList(ArticleListXRef(url, listId))
+    suspend fun addArticleToList(
+        url: String,
+        listId: Long,
+    ) = listDao.addArticleToList(ArticleListXRef(url, listId))
 
-    suspend fun removeArticleFromList(url: String, listId: Long) =
-        listDao.removeArticleFromList(url, listId)
+    suspend fun removeArticleFromList(
+        url: String,
+        listId: Long,
+    ) = listDao.removeArticleFromList(url, listId)
 
-    suspend fun getListIdsForArticle(url: String): List<Long> =
-        listDao.getListIdsForArticle(url)
+    suspend fun getListIdsForArticle(url: String): List<Long> = listDao.getListIdsForArticle(url)
 
     suspend fun batchUpdateSortOrder(idsInOrder: List<Long>) {
         database.withTransaction {

@@ -12,14 +12,14 @@ import android.content.Context
  *  - Tracks which mirror is currently active during failover
  */
 class MirrorRepository(context: Context) {
-
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     init {
         val current = prefs.getString(PREF_MIRROR_URL, null)
-        val deprecatedMirrors = setOf(
-            "https://freedium.cfd/",
-        )
+        val deprecatedMirrors =
+            setOf(
+                "https://freedium.cfd/",
+            )
         if (current != null && current in deprecatedMirrors) {
             prefs.edit().putString(PREF_MIRROR_URL, DEFAULT_MIRROR).apply()
         }

@@ -20,15 +20,17 @@ import com.vedesh.readfree.data.db.entity.Tag
         ArticleList::class,
         ArticleListXRef::class,
         Tag::class,
-        ArticleTagXRef::class
+        ArticleTagXRef::class,
     ],
     version = 1,
-    exportSchema = true
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun articleDao(): ArticleDao
+
     abstract fun listDao(): ListDao
+
     abstract fun tagDao(): TagDao
 
     companion object {
@@ -39,7 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
                 Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "readfree.db"
+                    "readfree.db",
                 )
                     .fallbackToDestructiveMigration()
                     .build().also { INSTANCE = it }

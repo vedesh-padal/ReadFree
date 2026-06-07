@@ -12,11 +12,12 @@ data class ArticleWithTags(
     @Relation(
         parentColumn = "url",
         entityColumn = "name",
-        associateBy = Junction(
-            ArticleTagXRef::class,
-            parentColumn = "articleUrl",
-            entityColumn = "tagName"
-        )
+        associateBy =
+            Junction(
+                ArticleTagXRef::class,
+                parentColumn = "articleUrl",
+                entityColumn = "tagName",
+            ),
     )
-    val tags: List<Tag>
+    val tags: List<Tag>,
 )

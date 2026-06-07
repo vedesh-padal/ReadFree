@@ -9,5 +9,5 @@ data class ArticleList(
     val name: String,
     val emoji: String = "📁",
     val colorHex: String = "#6C63FF",
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
 )

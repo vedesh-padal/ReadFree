@@ -9,12 +9,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ListsViewModel(
-    private val listRepo: ListRepository
+    private val listRepo: ListRepository,
 ) : ViewModel() {
-
-    val lists = listRepo.getAllWithCounts().stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
+    val lists =
+        listRepo.getAllWithCounts().stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList(),
+        )
 
     fun deleteList(list: com.vedesh.readfree.data.db.entity.ArticleList) {
         viewModelScope.launch {
@@ -35,7 +37,11 @@ class ListsViewModel(
         }
     }
 
-    fun createList(name: String, emoji: String, colorHex: String) {
+    fun createList(
+        name: String,
+        emoji: String,
+        colorHex: String,
+    ) {
         viewModelScope.launch {
             listRepo.insert(com.vedesh.readfree.data.db.entity.ArticleList(name = name, emoji = emoji, colorHex = colorHex))
         }

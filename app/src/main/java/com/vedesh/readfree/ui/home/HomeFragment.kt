@@ -14,6 +14,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,20 +23,16 @@ import com.google.android.material.chip.Chip
 import com.vedesh.readfree.MirrorRepository
 import com.vedesh.readfree.R
 import com.vedesh.readfree.ReadFreeApp
+import com.vedesh.readfree.data.db.entity.ReadState
+import com.vedesh.readfree.data.model.ArticleWithTags
 import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 import com.vedesh.readfree.databinding.FragmentHomeBinding
 import com.vedesh.readfree.ui.ViewModelFactory
 import com.vedesh.readfree.ui.reader.ReaderActivity
-import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import android.graphics.Color
-import android.widget.RadioGroup
-import com.vedesh.readfree.data.model.ArticleWithTags
-import com.vedesh.readfree.data.db.entity.ReadState
 
 class HomeFragment : Fragment() {
-
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var mirrors: MirrorRepository
@@ -47,22 +44,28 @@ class HomeFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         mirrors = MirrorRepository(requireContext())
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
         setupSearchAndFilters()
         observeViewModel()
 
-        findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("selectedListId")?.observe(viewLifecycleOwner) { listId ->
+        findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<Long>(
+            "selectedListId",
+        )?.observe(viewLifecycleOwner) { listId ->
             if (listId != null) {
                 binding.chipGroupFilters.clearCheck()
                 viewModel.setFilter(HomeViewModel.FilterType.LIST, listId = listId)
@@ -81,39 +84,47 @@ class HomeFragment : Fragment() {
         binding.btnHomeTags.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_tagsFragment)
         }
-
     }
 
     private fun setupRecyclerView() {
-        adapter = ArticleAdapter(
-            onClick = { articleWithTags ->
-                val intent = Intent(requireContext(), ReaderActivity::class.java)
-                intent.putExtra("url", articleWithTags.article.url)
-                startActivity(intent)
-            },
-            onLongClick = { articleWithTags ->
-                showArticleContextSheet(articleWithTags)
-            }
-        )
+        adapter =
+            ArticleAdapter(
+                onClick = { articleWithTags ->
+                    val intent = Intent(requireContext(), ReaderActivity::class.java)
+                    intent.putExtra("url", articleWithTags.article.url)
+                    startActivity(intent)
+                },
+                onLongClick = { articleWithTags ->
+                    showArticleContextSheet(articleWithTags)
+                },
+            )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
 
-        val swipeHandler = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-            override fun onMove(r: RecyclerView, v: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+        val swipeHandler =
+            object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+                override fun onMove(
+                    r: RecyclerView,
+                    v: RecyclerView.ViewHolder,
+                    t: RecyclerView.ViewHolder,
+                ) = false
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val item = adapter.currentList[position]
+                override fun onSwiped(
+                    viewHolder: RecyclerView.ViewHolder,
+                    direction: Int,
+                ) {
+                    val position = viewHolder.adapterPosition
+                    val item = adapter.currentList[position]
 
-                if (direction == ItemTouchHelper.RIGHT) {
-                    viewModel.toggleReadState(item.article.url, item.article.readState)
-                    // We don't remove the item immediately if filter is ALL, but UI updates via Flow
-                    adapter.notifyItemChanged(position)
-                } else if (direction == ItemTouchHelper.LEFT) {
-                    viewModel.deleteArticle(item.article.url)
+                    if (direction == ItemTouchHelper.RIGHT) {
+                        viewModel.toggleReadState(item.article.url, item.article.readState)
+                        // We don't remove the item immediately if filter is ALL, but UI updates via Flow
+                        adapter.notifyItemChanged(position)
+                    } else if (direction == ItemTouchHelper.LEFT) {
+                        viewModel.deleteArticle(item.article.url)
+                    }
                 }
             }
-        }
         ItemTouchHelper(swipeHandler).attachToRecyclerView(binding.recyclerView)
     }
 
@@ -136,13 +147,27 @@ class HomeFragment : Fragment() {
             binding.etSearch.text?.clear()
         }
 
-        binding.etSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                viewModel.setSearchQuery(s.toString())
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
+        binding.etSearch.addTextChangedListener(
+            object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int,
+                ) {}
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int,
+                ) {
+                    viewModel.setSearchQuery(s.toString())
+                }
+
+                override fun afterTextChanged(s: Editable?) {}
+            },
+        )
 
         // Setup Paste URL functionality
         binding.btnPasteRead.setOnClickListener {
@@ -170,7 +195,7 @@ class HomeFragment : Fragment() {
 
         binding.chipGroupFilters.setOnCheckedStateChangeListener { group, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            
+
             val checkedId = checkedIds.first()
             val chip = group.findViewById<Chip>(checkedId)
             val text = chip?.text?.toString() ?: return@setOnCheckedStateChangeListener
@@ -214,16 +239,24 @@ class HomeFragment : Fragment() {
 
                         // Add new chips
                         lists.forEach { listWithCount ->
-                            val chip = Chip(requireContext()).apply {
-                                text = listWithCount.list.name
-                                isCheckable = true
-                                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
-                            }
+                            val chip =
+                                Chip(requireContext()).apply {
+                                    text = listWithCount.list.name
+                                    isCheckable = true
+                                    setChipDrawable(
+                                        com.google.android.material.chip.ChipDrawable.createFromAttributes(
+                                            requireContext(),
+                                            null,
+                                            0,
+                                            com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice,
+                                        ),
+                                    )
+                                }
                             binding.chipGroupFilters.addView(chip)
-                    }
                         }
                     }
                 }
+            }
         }
     }
 
@@ -265,10 +298,11 @@ class HomeFragment : Fragment() {
 
         view.findViewById<View>(R.id.btnContextShare).setOnClickListener {
             sheet.dismiss()
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, item.article.url)
-            }
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, item.article.url)
+                }
             startActivity(Intent.createChooser(intent, "Share via"))
         }
 
@@ -322,13 +356,14 @@ class HomeFragment : Fragment() {
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val offlineDir = java.io.File(requireContext().filesDir, "offline")
-                val sizeBytes = if (offlineDir.exists()) {
-                    offlineDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
-                } else {
-                    0L
-                }
+                val sizeBytes =
+                    if (offlineDir.exists()) {
+                        offlineDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                    } else {
+                        0L
+                    }
                 val sizeMb = String.format("%.2f MB", sizeBytes / (1024f * 1024f))
-                
+
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     sheetBinding.tvOfflineStorageUsed.text = "Used: $sizeMb"
                 }
@@ -346,7 +381,7 @@ class HomeFragment : Fragment() {
                     offlineDir.deleteRecursively()
                 }
                 app.articleRepository.clearAllOfflinePaths()
-                
+
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     sheetBinding.tvOfflineStorageUsed.text = "Used: 0.00 MB"
                     Toast.makeText(requireContext(), "Offline files cleared", Toast.LENGTH_SHORT).show()
@@ -356,29 +391,32 @@ class HomeFragment : Fragment() {
 
         sheetBinding.btnApplyMirror.setOnClickListener {
             // Save Mirror
-            val selected = sheetBinding.root.findViewById<RadioButton>(
-                sheetBinding.radioGroupMirrors.checkedRadioButtonId
-            )
-            val newUrl = if (selected?.id == sheetBinding.radioMirrorCustom.id) {
-                val custom = sheetBinding.etCustomMirrorUrl.text.toString().trim()
-                if (custom.isEmpty()) {
-                    Toast.makeText(requireContext(), "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
+            val selected =
+                sheetBinding.root.findViewById<RadioButton>(
+                    sheetBinding.radioGroupMirrors.checkedRadioButtonId,
+                )
+            val newUrl =
+                if (selected?.id == sheetBinding.radioMirrorCustom.id) {
+                    val custom = sheetBinding.etCustomMirrorUrl.text.toString().trim()
+                    if (custom.isEmpty()) {
+                        Toast.makeText(requireContext(), "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    if (custom.endsWith("/")) custom else "$custom/"
+                } else {
+                    MirrorRepository.DEFAULT_MIRROR
                 }
-                if (custom.endsWith("/")) custom else "$custom/"
-            } else {
-                MirrorRepository.DEFAULT_MIRROR
-            }
 
             mirrors.saveUserMirror(newUrl)
-            
+
             // Save Raindrop Settings
             app.settingsRepository.saveRaindropToken(sheetBinding.etRaindropToken.text.toString())
             app.settingsRepository.setRaindropSyncEnabled(sheetBinding.switchRaindropSync.isChecked)
-            
-            val raindropModeRb = sheetBinding.root.findViewById<RadioButton>(
-                sheetBinding.radioGroupRaindropMode.checkedRadioButtonId
-            )
+
+            val raindropModeRb =
+                sheetBinding.root.findViewById<RadioButton>(
+                    sheetBinding.radioGroupRaindropMode.checkedRadioButtonId,
+                )
             app.settingsRepository.setRaindropSaveMode(raindropModeRb?.tag?.toString() ?: "API")
 
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()

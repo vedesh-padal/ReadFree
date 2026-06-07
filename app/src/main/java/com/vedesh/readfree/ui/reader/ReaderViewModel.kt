@@ -15,48 +15,62 @@ class ReaderViewModel(
     private val articleRepo: ArticleRepository,
     private val listRepo: ListRepository,
     private val tagRepo: TagRepository,
-    private val raindropRepo: RaindropRepository
+    private val raindropRepo: RaindropRepository,
 ) : ViewModel() {
+    val lists =
+        listRepo.getAllWithCounts().stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList(),
+        )
 
-    val lists = listRepo.getAllWithCounts().stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
-
-    fun checkIfExists(url: String, callback: (Boolean) -> Unit) {
+    fun checkIfExists(
+        url: String,
+        callback: (Boolean) -> Unit,
+    ) {
         viewModelScope.launch {
             callback(articleRepo.exists(url))
         }
     }
 
-    fun saveArticle(url: String, title: String, listId: Long?, tags: List<String>, isMediumUrl: Boolean) = viewModelScope.launch {
-            if (!articleRepo.exists(url)) {
-                articleRepo.insert(
-                    Article(
-                        url = url,
-                        title = title.ifEmpty { "Loading..." },
-                        isMediumUrl = isMediumUrl
-                    )
-                )
-            } else {
-                // Update title if it was loading before
-                articleRepo.getByUrl(url)?.let {
-                    if (it.title == "Loading..." || it.title == url) {
-                        articleRepo.update(it.copy(title = title))
-                    }
+    fun saveArticle(
+        url: String,
+        title: String,
+        listId: Long?,
+        tags: List<String>,
+        isMediumUrl: Boolean,
+    ) = viewModelScope.launch {
+        if (!articleRepo.exists(url)) {
+            articleRepo.insert(
+                Article(
+                    url = url,
+                    title = title.ifEmpty { "Loading..." },
+                    isMediumUrl = isMediumUrl,
+                ),
+            )
+        } else {
+            // Update title if it was loading before
+            articleRepo.getByUrl(url)?.let {
+                if (it.title == "Loading..." || it.title == url) {
+                    articleRepo.update(it.copy(title = title))
                 }
-            }
-            
-            if (listId != null) {
-                listRepo.addArticleToList(url, listId)
-            }
-            
-            tags.forEach { tagName ->
-                tagRepo.insert(com.vedesh.readfree.data.db.entity.Tag(tagName))
-                tagRepo.addTagToArticle(url, tagName)
             }
         }
 
-    fun updateTitle(url: String, newTitle: String) {
+        if (listId != null) {
+            listRepo.addArticleToList(url, listId)
+        }
+
+        tags.forEach { tagName ->
+            tagRepo.insert(com.vedesh.readfree.data.db.entity.Tag(tagName))
+            tagRepo.addTagToArticle(url, tagName)
+        }
+    }
+
+    fun updateTitle(
+        url: String,
+        newTitle: String,
+    ) {
         viewModelScope.launch {
             articleRepo.getByUrl(url)?.let {
                 if (it.title == "Loading..." || it.title == url || it.title.isEmpty()) {
@@ -68,13 +82,19 @@ class ReaderViewModel(
         }
     }
 
-    fun getArticle(url: String, callback: (Article?) -> Unit) {
+    fun getArticle(
+        url: String,
+        callback: (Article?) -> Unit,
+    ) {
         viewModelScope.launch {
             callback(articleRepo.getByUrl(url))
         }
     }
 
-    fun getArticleDetails(url: String, callback: (Article?, List<Long>, List<String>) -> Unit) {
+    fun getArticleDetails(
+        url: String,
+        callback: (Article?, List<Long>, List<String>) -> Unit,
+    ) {
         viewModelScope.launch {
             val article = articleRepo.getByUrl(url)
             val listIds = listRepo.getListIdsForArticle(url)
@@ -83,12 +103,16 @@ class ReaderViewModel(
         }
     }
 
-    fun updateScrollProgress(url: String, scrollY: Int, percentage: Float) {
+    fun updateScrollProgress(
+        url: String,
+        scrollY: Int,
+        percentage: Float,
+    ) {
         viewModelScope.launch {
             articleRepo.getByUrl(url)?.let { article ->
                 val newProgress = scrollY
                 val newState = if (percentage > 90f) com.vedesh.readfree.data.db.entity.ReadState.READ else article.readState
-                
+
                 if (article.scrollProgress != newProgress || article.readState != newState) {
                     articleRepo.update(article.copy(scrollProgress = newProgress, readState = newState))
                 }
@@ -96,7 +120,10 @@ class ReaderViewModel(
         }
     }
 
-    fun updateOfflinePath(url: String, path: String) {
+    fun updateOfflinePath(
+        url: String,
+        path: String,
+    ) {
         viewModelScope.launch {
             articleRepo.getByUrl(url)?.let { article ->
                 articleRepo.update(article.copy(offlineFilePath = path))

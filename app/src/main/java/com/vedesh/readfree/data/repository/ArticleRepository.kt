@@ -7,7 +7,6 @@ import com.vedesh.readfree.data.model.ArticleWithTags
 import kotlinx.coroutines.flow.Flow
 
 class ArticleRepository(private val articleDao: ArticleDao) {
-
     suspend fun insert(article: Article) = articleDao.insert(article)
 
     suspend fun update(article: Article) = articleDao.update(article)
@@ -28,20 +27,30 @@ class ArticleRepository(private val articleDao: ArticleDao) {
 
     fun search(query: String): Flow<List<ArticleWithTags>> = articleDao.search(query)
 
-    fun searchInList(query: String, listId: Long): Flow<List<ArticleWithTags>> =
-        articleDao.searchInList(query, listId)
+    fun searchInList(
+        query: String,
+        listId: Long,
+    ): Flow<List<ArticleWithTags>> = articleDao.searchInList(query, listId)
 
-    suspend fun updateReadState(url: String, state: ReadState) =
-        articleDao.updateReadState(url, state)
+    suspend fun updateReadState(
+        url: String,
+        state: ReadState,
+    ) = articleDao.updateReadState(url, state)
 
-    suspend fun updateProgress(url: String, progress: Int) =
-        articleDao.updateProgress(url, progress)
+    suspend fun updateProgress(
+        url: String,
+        progress: Int,
+    ) = articleDao.updateProgress(url, progress)
 
-    suspend fun updateOfflinePath(url: String, path: String?) =
-        articleDao.updateOfflinePath(url, path)
+    suspend fun updateOfflinePath(
+        url: String,
+        path: String?,
+    ) = articleDao.updateOfflinePath(url, path)
 
-    suspend fun updateRaindropTs(url: String, ts: Long?) =
-        articleDao.updateRaindropTs(url, ts)
+    suspend fun updateRaindropTs(
+        url: String,
+        ts: Long?,
+    ) = articleDao.updateRaindropTs(url, ts)
 
     suspend fun clearAllOfflinePaths() = articleDao.clearAllOfflinePaths()
 }

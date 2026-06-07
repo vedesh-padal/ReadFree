@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 import java.util.Collections
 
 class ListsFragment : Fragment() {
-
     private val viewModel: ListsViewModel by viewModels {
         val app = requireContext().applicationContext as ReadFreeApp
         ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository, app.raindropRepository)
@@ -37,13 +36,17 @@ class ListsFragment : Fragment() {
     private lateinit var adapter: ListAdapterImpl
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View? {
         return inflater.inflate(R.layout.fragment_lists, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         val toolbar = view.findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
@@ -52,13 +55,14 @@ class ListsFragment : Fragment() {
         }
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerViewLists)
-        
-        adapter = ListAdapterImpl(
-            onItemClick = { listWithCount ->
-                findNavController().previousBackStackEntry?.savedStateHandle?.set("selectedListId", listWithCount.list.id)
-                findNavController().navigateUp()
-            }
-        )
+
+        adapter =
+            ListAdapterImpl(
+                onItemClick = { listWithCount ->
+                    findNavController().previousBackStackEntry?.savedStateHandle?.set("selectedListId", listWithCount.list.id)
+                    findNavController().navigateUp()
+                },
+            )
         view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddList).setOnClickListener {
             showCreateListSheet()
         }
@@ -66,39 +70,48 @@ class ListsFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            ItemTouchHelper.LEFT
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean {
-                val fromPos = viewHolder.adapterPosition
-                val toPos = target.adapterPosition
-                val currentList = adapter.currentList.toMutableList()
-                Collections.swap(currentList, fromPos, toPos)
-                adapter.submitList(currentList)
-                return true
-            }
+        val itemTouchHelper =
+            ItemTouchHelper(
+                object : ItemTouchHelper.SimpleCallback(
+                    ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+                    ItemTouchHelper.LEFT,
+                ) {
+                    override fun onMove(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                        target: RecyclerView.ViewHolder,
+                    ): Boolean {
+                        val fromPos = viewHolder.adapterPosition
+                        val toPos = target.adapterPosition
+                        val currentList = adapter.currentList.toMutableList()
+                        Collections.swap(currentList, fromPos, toPos)
+                        adapter.submitList(currentList)
+                        return true
+                    }
 
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
-                // When drag ends, update order in DB
-                viewModel.updateSortOrder(adapter.currentList)
-            }
+                    override fun clearView(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                    ) {
+                        super.clearView(recyclerView, viewHolder)
+                        // When drag ends, update order in DB
+                        viewModel.updateSortOrder(adapter.currentList)
+                    }
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val item = adapter.currentList[position]
-                viewModel.deleteList(item.list)
-                Snackbar.make(view, "List deleted", Snackbar.LENGTH_LONG)
-                    .setAction("Undo") {
-                        // Undo logic would re-insert the list. For now just show toast or omit.
-                    }.show()
-            }
-        })
+                    override fun onSwiped(
+                        viewHolder: RecyclerView.ViewHolder,
+                        direction: Int,
+                    ) {
+                        val position = viewHolder.adapterPosition
+                        val item = adapter.currentList[position]
+                        viewModel.deleteList(item.list)
+                        Snackbar.make(view, "List deleted", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                // Undo logic would re-insert the list. For now just show toast or omit.
+                            }.show()
+                    }
+                },
+            )
         itemTouchHelper.attachToRecyclerView(recyclerView)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -111,21 +124,26 @@ class ListsFragment : Fragment() {
     }
 
     class ListAdapterImpl(
-        private val onItemClick: (ListWithCount) -> Unit
+        private val onItemClick: (ListWithCount) -> Unit,
     ) : ListAdapter<ListWithCount, ListAdapterImpl.ViewHolder>(ListDiffCallback()) {
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): ViewHolder {
             val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list_row, parent, false)
             return ViewHolder(view, onItemClick)
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        override fun onBindViewHolder(
+            holder: ViewHolder,
+            position: Int,
+        ) {
             holder.bind(getItem(position))
         }
 
         class ViewHolder(
             view: View,
-            private val onItemClick: (ListWithCount) -> Unit
+            private val onItemClick: (ListWithCount) -> Unit,
         ) : RecyclerView.ViewHolder(view) {
             private val tvEmoji: TextView = view.findViewById(R.id.tvEmoji)
             private val tvListName: TextView = view.findViewById(R.id.tvListName)
@@ -143,11 +161,17 @@ class ListsFragment : Fragment() {
         }
 
         class ListDiffCallback : DiffUtil.ItemCallback<ListWithCount>() {
-            override fun areItemsTheSame(oldItem: ListWithCount, newItem: ListWithCount): Boolean {
+            override fun areItemsTheSame(
+                oldItem: ListWithCount,
+                newItem: ListWithCount,
+            ): Boolean {
                 return oldItem.list.id == newItem.list.id
             }
 
-            override fun areContentsTheSame(oldItem: ListWithCount, newItem: ListWithCount): Boolean {
+            override fun areContentsTheSame(
+                oldItem: ListWithCount,
+                newItem: ListWithCount,
+            ): Boolean {
                 return oldItem == newItem
             }
         }
@@ -167,19 +191,28 @@ class ListsFragment : Fragment() {
         val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
 
         emojis.forEach { emoji ->
-            val chip = com.google.android.material.chip.Chip(requireContext()).apply {
-                text = emoji
-                isCheckable = true
-                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
-            }
+            val chip =
+                com.google.android.material.chip.Chip(requireContext()).apply {
+                    text = emoji
+                    isCheckable = true
+                    setChipDrawable(
+                        com.google.android.material.chip.ChipDrawable.createFromAttributes(
+                            requireContext(),
+                            null,
+                            0,
+                            com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice,
+                        ),
+                    )
+                }
             chipGroupEmojis.addView(chip)
         }
 
         colors.forEach { colorHex ->
-            val rb = android.widget.RadioButton(requireContext()).apply {
-                buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorHex))
-                tag = colorHex
-            }
+            val rb =
+                android.widget.RadioButton(requireContext()).apply {
+                    buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorHex))
+                    tag = colorHex
+                }
             radioGroupColors.addView(rb)
         }
 
@@ -191,7 +224,7 @@ class ListsFragment : Fragment() {
             if (name.isNotEmpty()) {
                 val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
                 val emoji = selectedEmojiChip?.text?.toString() ?: "📁"
-                
+
                 val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
                 val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
 
@@ -199,7 +232,7 @@ class ListsFragment : Fragment() {
                 sheet.dismiss()
             }
         }
-        
+
         sheet.show()
     }
 }

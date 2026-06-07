@@ -7,17 +7,17 @@ import android.net.Uri
  * No Android lifecycle or UI state — safe to call from anywhere.
  */
 object UrlUtils {
-
-    private val KNOWN_MEDIUM_HOSTS = setOf(
-        "medium.com",
-        "towardsdatascience.com",
-        "betterprogramming.pub",
-        "levelup.gitconnected.com",
-        "javascript.plainenglish.io",
-        "itnext.io",
-        "blog.bitsrc.io",
-        "hackernoon.com"
-    )
+    private val KNOWN_MEDIUM_HOSTS =
+        setOf(
+            "medium.com",
+            "towardsdatascience.com",
+            "betterprogramming.pub",
+            "levelup.gitconnected.com",
+            "javascript.plainenglish.io",
+            "itnext.io",
+            "blog.bitsrc.io",
+            "hackernoon.com",
+        )
 
     /**
      * Extracts the first http/https URL found in [text].

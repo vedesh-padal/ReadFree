@@ -8,12 +8,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TagsViewModel(
-    private val tagRepo: TagRepository
+    private val tagRepo: TagRepository,
 ) : ViewModel() {
-
-    val tags = tagRepo.getAllWithCounts().stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
-    )
+    val tags =
+        tagRepo.getAllWithCounts().stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList(),
+        )
 
     fun deleteTag(tag: com.vedesh.readfree.data.db.entity.Tag) {
         viewModelScope.launch {
@@ -21,7 +23,10 @@ class TagsViewModel(
         }
     }
 
-    fun renameTag(oldName: String, newName: String) {
+    fun renameTag(
+        oldName: String,
+        newName: String,
+    ) {
         viewModelScope.launch {
             tagRepo.rename(oldName, newName)
         }

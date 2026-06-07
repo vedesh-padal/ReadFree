@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
-
     private lateinit var binding: ActivityReaderBinding
     private lateinit var mirrors: MirrorRepository
 
@@ -77,15 +76,16 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     }
 
     private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (binding.webView.canGoBack()) {
-                    binding.webView.goBack()
-                } else {
-                    finish()
+        val callback =
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (binding.webView.canGoBack()) {
+                        binding.webView.goBack()
+                    } else {
+                        finish()
+                    }
                 }
             }
-        }
         onBackPressedDispatcher.addCallback(this, callback)
     }
 
@@ -95,18 +95,19 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     }
 
     private fun handleIntent(intent: Intent) {
-        val url = when (intent.action) {
-            Intent.ACTION_SEND -> {
-                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
-                UrlUtils.extractUrl(sharedText)
+        val url =
+            when (intent.action) {
+                Intent.ACTION_SEND -> {
+                    val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
+                    UrlUtils.extractUrl(sharedText)
+                }
+                Intent.ACTION_VIEW -> intent.data?.toString()
+                else -> intent.getStringExtra("url")
             }
-            Intent.ACTION_VIEW -> intent.data?.toString()
-            else -> intent.getStringExtra("url")
-        }
 
         if (url != null) {
             loadArticle(url)
-            
+
             if (intent.getBooleanExtra("show_save_sheet", false) || intent.action == Intent.ACTION_SEND) {
                 // We delay slightly to let the view settle if needed, but direct call is fine
                 binding.root.post {
@@ -136,7 +137,10 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private inner class ReadFreeJSInterface {
         @JavascriptInterface
-        fun onScrollProgress(scrollY: Int, percentage: Float) {
+        fun onScrollProgress(
+            scrollY: Int,
+            percentage: Float,
+        ) {
             // Debounce or directly save; for simplicity, we directly save since room is fast enough,
             // but in a real app, we might debounce.
             if (currentArticleUrl.isNotEmpty()) {
@@ -153,9 +157,10 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         binding.loadingView.visibility = View.GONE
         if (url != null) {
             binding.urlBar.text = UrlUtils.formatUrlForDisplay(url)
-            
+
             // Extract title and set up scroll tracking
-            binding.webView.evaluateJavascript("""
+            binding.webView.evaluateJavascript(
+                """
                 (function() {
                     let debounceTimer;
                     window.addEventListener('scroll', function() {
@@ -169,7 +174,8 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                     });
                     return document.title;
                 })();
-            """.trimIndent()) { titleRaw ->
+                """.trimIndent(),
+            ) { titleRaw ->
                 val title = titleRaw?.removeSurrounding("\"")?.trim() ?: "Untitled"
                 viewModel.updateTitle(currentArticleUrl, title)
                 saveBinding?.tvSaveTitle?.text = title
@@ -219,7 +225,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         } else {
             binding.errorView.visibility = View.VISIBLE
             binding.errorText.text = "Failed to load the article."
-            
+
             if (UrlUtils.isMediumDomain(currentArticleUrl)) {
                 binding.errorSubText.text = "Both the selected and default mirrors failed. You can verify your connection or configure a different mirror."
                 binding.btnErrorSettings.visibility = View.VISIBLE
@@ -264,19 +270,21 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         }
 
         sheetBinding.btnApplyMirror.setOnClickListener {
-            val selected = sheetBinding.root.findViewById<RadioButton>(
-                sheetBinding.radioGroupMirrors.checkedRadioButtonId
-            )
-            val newUrl = if (selected?.id == sheetBinding.radioMirrorCustom.id) {
-                val custom = sheetBinding.etCustomMirrorUrl.text.toString().trim()
-                if (custom.isEmpty()) {
-                    Toast.makeText(this, "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
+            val selected =
+                sheetBinding.root.findViewById<RadioButton>(
+                    sheetBinding.radioGroupMirrors.checkedRadioButtonId,
+                )
+            val newUrl =
+                if (selected?.id == sheetBinding.radioMirrorCustom.id) {
+                    val custom = sheetBinding.etCustomMirrorUrl.text.toString().trim()
+                    if (custom.isEmpty()) {
+                        Toast.makeText(this, "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    if (custom.endsWith("/")) custom else "$custom/"
+                } else {
+                    MirrorRepository.DEFAULT_MIRROR
                 }
-                if (custom.endsWith("/")) custom else "$custom/"
-            } else {
-                MirrorRepository.DEFAULT_MIRROR
-            }
 
             mirrors.saveUserMirror(newUrl)
             sheet.dismiss()
@@ -298,13 +306,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
         binding.errorView.visibility = View.GONE
         binding.loadingView.visibility = View.VISIBLE
-        
+
         binding.loadingText.text = if (UrlUtils.isMediumDomain(cleanUrl)) "Contacting Freedium…" else "Loading…"
 
         // Check for offline load first
         viewModel.getArticle(cleanUrl) { article ->
             val offlinePath = article?.offlineFilePath
-            
+
             runOnUiThread {
                 if (isOffline() && offlinePath != null && java.io.File(offlinePath).exists()) {
                     binding.loadingText.text = "Loading offline version…"
@@ -314,7 +322,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                     binding.webView.loadUrl(loadUrl)
                 }
             }
-            
+
             // Check if article is already saved to show banner
             if (article == null) {
                 runOnUiThread { showSaveBanner(isSaved = false) }
@@ -327,7 +335,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             }
         }
     }
-    
+
     private val bannerHandler = Handler(Looper.getMainLooper())
     private val hideBannerRunnable = Runnable { binding.saveBanner.visibility = View.GONE }
 
@@ -354,21 +362,21 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         bannerHandler.removeCallbacks(hideBannerRunnable)
         bannerHandler.postDelayed(hideBannerRunnable, 5000)
     }
-    
+
     private fun showQuickSaveSheet() {
         if (saveSheet != null) return
-        
+
         saveSheet = BottomSheetDialog(this)
         saveBinding = BottomSheetSaveBinding.inflate(layoutInflater)
         saveSheet?.setContentView(saveBinding!!.root)
-        
+
         saveSheet?.setOnDismissListener {
             saveSheet = null
             saveBinding = null
         }
-        
+
         saveBinding?.tvSaveTitle?.text = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Loading title..."
-        
+
         var selectedListId: Long? = null
         val selectedTags = mutableSetOf<String>()
 
@@ -396,13 +404,14 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.lists.collectLatest { lists ->
                     val names = lists.map { it.list.name }.toTypedArray()
-                    val adapter = android.widget.ArrayAdapter(
-                        this@ReaderActivity,
-                        android.R.layout.simple_dropdown_item_1line,
-                        names
-                    )
+                    val adapter =
+                        android.widget.ArrayAdapter(
+                            this@ReaderActivity,
+                            android.R.layout.simple_dropdown_item_1line,
+                            names,
+                        )
                     saveBinding?.spinnerLists?.setAdapter(adapter)
-                    
+
                     saveBinding?.spinnerLists?.setOnItemClickListener { _, _, position, _ ->
                         selectedListId = lists[position].list.id
                     }
@@ -421,7 +430,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                     saveBinding?.btnSaveAndClose?.text = "Update & Close"
                     saveBinding?.btnReadNow?.text = "Update"
                     selectedListId = listIds.firstOrNull()
-                    
+
                     tags.forEach { tagName ->
                         if (selectedTags.add(tagName.lowercase())) {
                             val chip = com.google.android.material.chip.Chip(this@ReaderActivity)
@@ -440,7 +449,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
         saveBinding?.btnSaveAndClose?.setOnClickListener {
             lifecycleScope.launch {
-                viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl)).join()
+                viewModel.saveArticle(
+                    currentArticleUrl,
+                    saveBinding?.tvSaveTitle?.text.toString(),
+                    selectedListId,
+                    selectedTags.toList(),
+                    UrlUtils.isMediumDomain(currentArticleUrl),
+                ).join()
                 saveSheet?.dismiss()
                 Toast.makeText(this@ReaderActivity, if (isEditMode) "Updated library" else "Saved to library", Toast.LENGTH_SHORT).show()
                 finish()
@@ -448,7 +463,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         }
 
         saveBinding?.btnReadNow?.setOnClickListener {
-            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl))
+            viewModel.saveArticle(
+                currentArticleUrl,
+                saveBinding?.tvSaveTitle?.text.toString(),
+                selectedListId,
+                selectedTags.toList(),
+                UrlUtils.isMediumDomain(currentArticleUrl),
+            )
             saveSheet?.dismiss()
         }
 
@@ -475,10 +496,10 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private fun saveOffline() {
         if (currentArticleUrl.isEmpty()) return
-        
+
         val dir = java.io.File(filesDir, "offline")
         if (!dir.exists()) dir.mkdirs()
-        
+
         val filePath = java.io.File(dir, "${currentArticleUrl.hashCode()}.mht").absolutePath
         binding.webView.saveWebArchive(filePath, false) { savedPath ->
             if (savedPath != null) {

@@ -12,20 +12,20 @@ import androidx.room.Index
             entity = Article::class,
             parentColumns = ["url"],
             childColumns = ["articleUrl"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
             entity = Tag::class,
             parentColumns = ["name"],
             childColumns = ["tagName"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
-        Index("tagName")
-    ]
+        Index("tagName"),
+    ],
 )
 data class ArticleTagXRef(
     val articleUrl: String,
-    val tagName: String
+    val tagName: String,
 )

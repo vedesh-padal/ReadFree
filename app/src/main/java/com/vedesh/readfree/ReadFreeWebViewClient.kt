@@ -21,19 +21,26 @@ import android.webkit.WebViewClient
  */
 class ReadFreeWebViewClient(
     private val mirrors: MirrorRepository,
-    private val listener: Listener
+    private val listener: Listener,
 ) : WebViewClient() {
-
     interface Listener {
         fun onPageStarted()
+
         fun onPageFinished(url: String?)
+
         fun onMainFrameError()
+
         fun onMainFrameHttpError(statusCode: Int)
+
         fun onSslError(handler: SslErrorHandler?)
+
         fun onExternalUrlRequested(url: String)
     }
 
-    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+    override fun shouldOverrideUrlLoading(
+        view: WebView?,
+        request: WebResourceRequest?,
+    ): Boolean {
         val url = request?.url?.toString() ?: return false
         // Mirror URLs and known Medium domains stay inside the WebView
         val isMirror = url.startsWith(mirrors.getActiveMirror()) || url.startsWith(MirrorRepository.DEFAULT_MIRROR)
@@ -45,12 +52,19 @@ class ReadFreeWebViewClient(
         }
     }
 
-    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+    override fun onPageStarted(
+        view: WebView?,
+        url: String?,
+        favicon: Bitmap?,
+    ) {
         super.onPageStarted(view, url, favicon)
         listener.onPageStarted()
     }
 
-    override fun onPageFinished(view: WebView?, url: String?) {
+    override fun onPageFinished(
+        view: WebView?,
+        url: String?,
+    ) {
         super.onPageFinished(view, url)
         listener.onPageFinished(url)
     }
@@ -58,7 +72,7 @@ class ReadFreeWebViewClient(
     override fun onReceivedError(
         view: WebView?,
         request: WebResourceRequest?,
-        error: WebResourceError?
+        error: WebResourceError?,
     ) {
         super.onReceivedError(view, request, error)
         // Ignore sub-resource errors (images, scripts) — only react to main-frame failures
@@ -68,7 +82,7 @@ class ReadFreeWebViewClient(
     override fun onReceivedHttpError(
         view: WebView?,
         request: WebResourceRequest?,
-        errorResponse: WebResourceResponse?
+        errorResponse: WebResourceResponse?,
     ) {
         super.onReceivedHttpError(view, request, errorResponse)
         val statusCode = errorResponse?.statusCode ?: return
@@ -78,7 +92,11 @@ class ReadFreeWebViewClient(
         }
     }
 
-    override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+    override fun onReceivedSslError(
+        view: WebView?,
+        handler: SslErrorHandler?,
+        error: SslError?,
+    ) {
         listener.onSslError(handler)
     }
 }

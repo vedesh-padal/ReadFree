@@ -12,5 +12,5 @@ data class Article(
     val scrollProgress: Int = 0,
     val offlineFilePath: String? = null,
     val raindropSavedAt: Long? = null,
-    val isMediumUrl: Boolean = false
+    val isMediumUrl: Boolean = false,
 )

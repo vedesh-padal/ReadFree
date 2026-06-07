@@ -5,5 +5,5 @@ import com.vedesh.readfree.data.db.entity.ArticleList
 
 data class ListWithCount(
     @Embedded val list: ArticleList,
-    val articleCount: Int
+    val articleCount: Int,
 )

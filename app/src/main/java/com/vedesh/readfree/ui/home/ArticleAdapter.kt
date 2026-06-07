@@ -16,43 +16,51 @@ import com.vedesh.readfree.databinding.ItemArticleCardBinding
 
 class ArticleAdapter(
     private val onClick: (ArticleWithTags) -> Unit,
-    private val onLongClick: (ArticleWithTags) -> Unit
+    private val onLongClick: (ArticleWithTags) -> Unit,
 ) : ListAdapter<ArticleWithTags, ArticleAdapter.ViewHolder>(ArticleDiffCallback()) {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemArticleCardBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder {
+        val binding =
+            ItemArticleCardBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false,
+            )
         return ViewHolder(binding, onClick, onLongClick)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         holder.bind(getItem(position))
     }
 
     class ViewHolder(
         private val binding: ItemArticleCardBinding,
         private val onClick: (ArticleWithTags) -> Unit,
-        private val onLongClick: (ArticleWithTags) -> Unit
+        private val onLongClick: (ArticleWithTags) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
-
         fun bind(item: ArticleWithTags) {
             binding.root.setOnClickListener { onClick(item) }
-            binding.root.setOnLongClickListener { 
+            binding.root.setOnLongClickListener {
                 onLongClick(item)
                 true
             }
 
             binding.tvTitle.text = item.article.title.ifEmpty { "Untitled Article" }
             binding.tvUrl.text = UrlUtils.formatUrlForDisplay(item.article.url)
-            
+
             // Set Read State color
-            val colorRes = when (item.article.readState) {
-                ReadState.UNREAD -> R.color.read_state_unread
-                ReadState.READING -> R.color.read_state_reading
-                ReadState.READ -> R.color.read_state_read
-            }
-            binding.readStateIndicator.backgroundTintList = 
+            val colorRes =
+                when (item.article.readState) {
+                    ReadState.UNREAD -> R.color.read_state_unread
+                    ReadState.READING -> R.color.read_state_reading
+                    ReadState.READ -> R.color.read_state_read
+                }
+            binding.readStateIndicator.backgroundTintList =
                 ContextCompat.getColorStateList(binding.root.context, colorRes)
 
             // Formatted Date
@@ -70,13 +78,14 @@ class ArticleAdapter(
             } else {
                 binding.tagsScrollView.visibility = View.VISIBLE
                 item.tags.forEach { tag ->
-                    val chip = Chip(binding.root.context).apply {
-                        text = tag.name
-                        textSize = 10f
-                        isClickable = false
-                        chipMinHeight = 24f
-                        ensureAccessibleTouchTarget(24)
-                    }
+                    val chip =
+                        Chip(binding.root.context).apply {
+                            text = tag.name
+                            textSize = 10f
+                            isClickable = false
+                            chipMinHeight = 24f
+                            ensureAccessibleTouchTarget(24)
+                        }
                     binding.chipGroupTags.addView(chip)
                 }
             }
@@ -84,11 +93,17 @@ class ArticleAdapter(
     }
 
     class ArticleDiffCallback : DiffUtil.ItemCallback<ArticleWithTags>() {
-        override fun areItemsTheSame(oldItem: ArticleWithTags, newItem: ArticleWithTags): Boolean {
+        override fun areItemsTheSame(
+            oldItem: ArticleWithTags,
+            newItem: ArticleWithTags,
+        ): Boolean {
             return oldItem.article.url == newItem.article.url
         }
 
-        override fun areContentsTheSame(oldItem: ArticleWithTags, newItem: ArticleWithTags): Boolean {
+        override fun areContentsTheSame(
+            oldItem: ArticleWithTags,
+            newItem: ArticleWithTags,
+        ): Boolean {
             return oldItem == newItem
         }
     }
