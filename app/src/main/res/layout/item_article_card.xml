@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Read state indicator dot (left gutter) -->
+        <!-- Read state indicator dot/check (left gutter) -->
         <View
             android:id="@+id/readStateIndicator"
             android:layout_width="8dp"
@@ -26,6 +26,18 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvTitle"
             app:layout_constraintBottom_toBottomOf="@id/tvTitle" />
+
+        <ImageView
+            android:id="@+id/ivReadCheck"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_check"
+            android:visibility="gone"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvTitle"
+            app:layout_constraintBottom_toBottomOf="@id/tvTitle"
+            tools:visibility="visible" />
 
         <!-- Article title (bold = UNREAD, normal = READING, dimmed = READ) -->
         <TextView

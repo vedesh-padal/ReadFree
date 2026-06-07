@@ -56,6 +56,7 @@ class ArticleAdapter(
                     binding.tvTitle.alpha = 1f
                     binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     binding.readStateIndicator.visibility = View.VISIBLE
+                    binding.ivReadCheck.visibility = View.GONE
                     binding.readStateIndicator.backgroundTintList =
                         ContextCompat.getColorStateList(binding.root.context, R.color.read_state_unread)
                     val lp = binding.readStateIndicator.layoutParams
@@ -69,6 +70,7 @@ class ArticleAdapter(
                     binding.tvTitle.alpha = 1f
                     binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     binding.readStateIndicator.visibility = View.VISIBLE
+                    binding.ivReadCheck.visibility = View.GONE
                     binding.readStateIndicator.backgroundTintList =
                         ContextCompat.getColorStateList(binding.root.context, R.color.read_state_reading)
                     val lp = binding.readStateIndicator.layoutParams
@@ -81,13 +83,8 @@ class ArticleAdapter(
                     binding.tvTitle.setTypeface(null, Typeface.NORMAL)
                     binding.tvTitle.alpha = 0.45f
                     binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-                    binding.readStateIndicator.visibility = View.VISIBLE
-                    binding.readStateIndicator.backgroundTintList =
-                        ContextCompat.getColorStateList(binding.root.context, R.color.read_state_read)
-                    val lp = binding.readStateIndicator.layoutParams
-                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_reading)
-                    lp.height = lp.width
-                    binding.readStateIndicator.layoutParams = lp
+                    binding.readStateIndicator.visibility = View.GONE
+                    binding.ivReadCheck.visibility = View.VISIBLE
                 }
             }
 
