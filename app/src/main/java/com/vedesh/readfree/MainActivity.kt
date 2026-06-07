@@ -4,11 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import com.vedesh.readfree.databinding.ActivityMainBinding
@@ -141,6 +143,21 @@ class MainActivity : AppCompatActivity() {
                     super.onPageFinished(view, url)
                     binding.loadingView.visibility = View.GONE
                     url?.let { binding.urlBar.text = formatUrlForDisplay(it) }
+                }
+
+                override fun onReceivedSslError(
+                    view: WebView?,
+                    handler: SslErrorHandler?,
+                    error: android.net.http.SslError?
+                ) {
+                    // Hide the loading overlay — something went wrong
+                    binding.loadingView.visibility = View.GONE
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle("SSL Certificate Warning")
+                        .setMessage("This site has a certificate issue. Proceed anyway? Your connection may not be secure.")
+                        .setPositiveButton("Proceed") { _, _ -> handler?.proceed() }
+                        .setNegativeButton("Cancel") { _, _ -> handler?.cancel() }
+                        .show()
                 }
             }
         }
