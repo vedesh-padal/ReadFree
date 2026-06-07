@@ -27,6 +27,13 @@ class ReaderViewModel(
             emptyList(),
         )
 
+    val allTags =
+        tagRepo.getAll().stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList(),
+        )
+
     private val _progressPercentage = MutableStateFlow(0)
     val progressPercentage: StateFlow<Int> = _progressPercentage
 
@@ -141,6 +148,18 @@ class ReaderViewModel(
                     articleRepo.update(article.copy(scrollProgress = newProgress, readState = newState))
                 }
             }
+        }
+    }
+
+    fun createList(
+        name: String,
+        emoji: String,
+        colorHex: String,
+    ) {
+        viewModelScope.launch {
+            listRepo.insert(
+                com.vedesh.readfree.data.db.entity.ArticleList(name = name, emoji = emoji, colorHex = colorHex),
+            )
         }
     }
 

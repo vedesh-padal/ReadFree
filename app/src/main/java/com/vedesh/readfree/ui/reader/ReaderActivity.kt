@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import android.webkit.JavascriptInterface
 import android.widget.RadioButton
 import android.widget.Toast
@@ -86,8 +88,21 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         binding.btnBottomRaindrop.setOnClickListener {
             if (currentArticleUrl.isEmpty()) return@setOnClickListener
             val app = applicationContext as ReadFreeApp
-            app.raindropRepository.syncArticle(currentArticleUrl, binding.webView.title ?: currentArticleUrl)
-            Toast.makeText(this, "Sent to Raindrop", Toast.LENGTH_SHORT).show()
+            val url = currentArticleUrl
+            val title = binding.webView.title ?: currentArticleUrl
+            app.raindropRepository.syncArticle(url, title) { success ->
+                runOnUiThread {
+                    if (success) {
+                        com.google.android.material.snackbar.Snackbar.make(binding.root, "Sent to Raindrop", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        com.google.android.material.snackbar.Snackbar.make(binding.root, "Failed to save to Raindrop", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                            .setAction("Retry") {
+                                app.raindropRepository.syncArticle(url, title)
+                                com.google.android.material.snackbar.Snackbar.make(binding.root, "Sent to Raindrop", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+                            }.show()
+                    }
+                }
+            }
         }
 
         binding.btnBottomBrowser.setOnClickListener {
@@ -112,6 +127,31 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             }
         }
+
+        // Flush progress on pause
+        lifecycle.addObserver(object : androidx.lifecycle.LifecycleEventObserver {
+            override fun onStateChanged(
+                source: androidx.lifecycle.LifecycleOwner,
+                event: androidx.lifecycle.Lifecycle.Event,
+            ) {
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE && currentArticleUrl.isNotEmpty()) {
+                    binding.webView.evaluateJavascript(
+                        "(function(){ return JSON.stringify({scrollY: window.scrollY, height: document.body.scrollHeight, viewport: window.innerHeight}); })();",
+                    ) { json ->
+                        if (json != null) {
+                            try {
+                                val obj = org.json.JSONObject(json)
+                                val scrollY = obj.getInt("scrollY")
+                                val height = obj.getInt("height")
+                                val viewport = obj.getInt("viewport")
+                                val pct = if (height > viewport) ((scrollY.toFloat() / (height - viewport)) * 100f) else 100f
+                                viewModel.updateScrollProgress(currentArticleUrl, scrollY, pct)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                }
+            }
+        })
 
         handleIntent(intent)
     }
@@ -279,14 +319,19 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 """
                 (function() {
                     let debounceTimer;
+                    function reportScroll() {
+                        var maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+                        var currentScroll = window.scrollY;
+                        var percentage = maxScroll > 0 ? (currentScroll / maxScroll) * 100 : 0;
+                        AndroidJS.onScrollProgress(Math.round(currentScroll), percentage);
+                    }
                     window.addEventListener('scroll', function() {
                         clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(function() {
-                            var maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
-                            var currentScroll = window.scrollY;
-                            var percentage = maxScroll > 0 ? (currentScroll / maxScroll) * 100 : 0;
-                            AndroidJS.onScrollProgress(Math.round(currentScroll), percentage);
-                        }, 500); // 500ms debounce
+                        debounceTimer = setTimeout(reportScroll, 500);
+                    });
+                    window.addEventListener('resize', function() {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(reportScroll, 300);
                     });
                     return document.title;
                 })();
@@ -295,6 +340,15 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 val title = titleRaw?.removeSurrounding("\"")?.trim() ?: "Untitled"
                 viewModel.updateTitle(currentArticleUrl, title)
                 saveBinding?.tvSaveTitle?.text = title
+            }
+
+            // Auto-mark READ if page fits entirely in viewport
+            binding.webView.evaluateJavascript(
+                "(function(){ var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight); return h <= window.innerHeight ? 1 : 0; })();",
+            ) { isShort ->
+                if (isShort == "1") {
+                    viewModel.setReadState(currentArticleUrl, com.vedesh.readfree.data.db.entity.ReadState.READ)
+                }
             }
 
             // Restore previous scroll position
@@ -492,6 +546,61 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         bannerHandler.postDelayed(hideBannerRunnable, 5000)
     }
 
+    private fun showCreateListSheet(onCreated: (String) -> Unit) {
+        val sheet = BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_create_list, null)
+        sheet.setContentView(sheetView)
+
+        val header = (sheetView as? ViewGroup)?.getChildAt(0) as? TextView
+        header?.text = "New List"
+
+        val etListName = sheetView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etListName)
+        val chipGroupEmojis = sheetView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojis)
+        val radioGroupColors = sheetView.findViewById<android.widget.RadioGroup>(R.id.radioGroupColors)
+        val btnCreateList = sheetView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
+
+        val emojis = listOf("\uD83D\uDCC1", "\uD83D\uDCDA", "\uD83D\uDCBC", "\uD83E\uDD16", "\uD83C\uDFAF", "\u2B50", "\uD83D\uDD2C", "\uD83C\uDFA8", "\uD83C\uDF10", "\uD83D\uDCDD", "\uD83C\uDFE0", "\uD83D\uDCA1", "\uD83D\uDD25", "\uD83C\uDF31", "\uD83C\uDFB5", "\uD83C\uDFAE")
+        val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
+
+        chipGroupEmojis.removeAllViews()
+        emojis.forEach { emoji ->
+            val chip = com.google.android.material.chip.Chip(this).apply {
+                text = emoji
+                isCheckable = true
+                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(this@ReaderActivity, null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
+            }
+            chipGroupEmojis.addView(chip)
+        }
+
+        radioGroupColors.removeAllViews()
+        colors.forEach { colorHex ->
+            val rb = android.widget.RadioButton(this).apply {
+                buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorHex))
+                tag = colorHex
+            }
+            radioGroupColors.addView(rb)
+        }
+
+        if (chipGroupEmojis.childCount > 0) (chipGroupEmojis.getChildAt(0) as com.google.android.material.chip.Chip).isChecked = true
+        if (radioGroupColors.childCount > 0) (radioGroupColors.getChildAt(0) as android.widget.RadioButton).isChecked = true
+
+        btnCreateList.text = "Create"
+        btnCreateList.setOnClickListener {
+            val name = etListName.text.toString().trim()
+            if (name.isNotEmpty()) {
+                val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
+                val emoji = selectedEmojiChip?.text?.toString() ?: "\uD83D\uDCC1"
+                val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
+                val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
+                viewModel.createList(name, emoji, color)
+                onCreated(name)
+                sheet.dismiss()
+            }
+        }
+
+        sheet.show()
+    }
+
     private fun showQuickSaveSheet() {
         if (saveSheet != null) return
 
@@ -509,8 +618,25 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         var selectedListId: Long? = null
         val selectedTags = mutableSetOf<String>()
 
+        // Tag autocomplete: show existing tags as suggestions
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.allTags.collectLatest { tags ->
+                    val tagNames = tags.map { it.name }.toTypedArray()
+                    val tagAdapter =
+                        android.widget.ArrayAdapter(
+                            this@ReaderActivity,
+                            android.R.layout.simple_dropdown_item_1line,
+                            tagNames,
+                        )
+                    saveBinding?.etAddTag?.setAdapter(tagAdapter)
+                    saveBinding?.etAddTag?.threshold = 1
+                }
+            }
+        }
+
         // Set up Tag input
-        saveBinding?.etAddTag?.setOnEditorActionListener { v, actionId, event ->
+        saveBinding?.etAddTag?.setOnEditorActionListener { v, _, _ ->
             val text = v.text.toString().trim()
             if (text.isNotEmpty() && text.length < 30) {
                 if (selectedTags.add(text.lowercase())) {
@@ -532,7 +658,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.lists.collectLatest { lists ->
-                    val names = lists.map { it.list.name }.toTypedArray()
+                    val names = (lists.map { it.list.name } + "+ Create new list").toTypedArray()
                     val adapter =
                         android.widget.ArrayAdapter(
                             this@ReaderActivity,
@@ -542,7 +668,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                     saveBinding?.spinnerLists?.setAdapter(adapter)
 
                     saveBinding?.spinnerLists?.setOnItemClickListener { _, _, position, _ ->
-                        selectedListId = lists[position].list.id
+                        if (position < lists.size) {
+                            selectedListId = lists[position].list.id
+                        } else {
+                            showCreateListSheet { newListName ->
+                                saveBinding?.spinnerLists?.setText(newListName, false)
+                            }
+                        }
                     }
                 }
             }
