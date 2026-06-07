@@ -114,6 +114,24 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupSearchAndFilters() {
+        binding.btnHomeSearchToggle.setOnClickListener {
+            binding.toolbar.visibility = View.GONE
+            binding.searchLayout.visibility = View.VISIBLE
+            binding.etSearch.requestFocus()
+            // optionally show keyboard here
+        }
+
+        binding.btnSearchBack.setOnClickListener {
+            binding.searchLayout.visibility = View.GONE
+            binding.toolbar.visibility = View.VISIBLE
+            binding.etSearch.text?.clear()
+            viewModel.setSearchQuery("")
+        }
+
+        binding.btnSearchClear.setOnClickListener {
+            binding.etSearch.text?.clear()
+        }
+
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -121,6 +139,28 @@ class HomeFragment : Fragment() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        // Setup Paste URL functionality
+        binding.btnPasteRead.setOnClickListener {
+            val url = binding.etPasteUrl.text.toString().trim()
+            if (url.isNotEmpty()) {
+                val intent = Intent(requireContext(), ReaderActivity::class.java)
+                intent.putExtra("url", url)
+                startActivity(intent)
+            } else {
+                Toast.makeText(requireContext(), "Enter a URL first", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.btnPasteSave.setOnClickListener {
+            val url = binding.etPasteUrl.text.toString().trim()
+            if (url.isNotEmpty()) {
+                // In a complete implementation, this opens SaveBottomSheet directly.
+                Toast.makeText(requireContext(), "Save Bottom Sheet should open here. For now use Share intent or open Reader.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Enter a URL first", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         binding.chipGroupFilters.setOnCheckedStateChangeListener { group, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener

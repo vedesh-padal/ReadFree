@@ -12,64 +12,157 @@
         android:background="@color/bg_primary"
         app:elevation="0dp">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="Library"
-            app:titleTextColor="@color/text_primary">
+            android:layout_height="?attr/actionBarSize">
+            
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:title="Library"
+                app:titleTextColor="@color/text_primary">
 
-            <androidx.appcompat.widget.AppCompatImageButton
-                android:id="@+id/btnHomeLists"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="end"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Lists"
-                android:src="@android:drawable/ic_menu_sort_by_size"
-                app:tint="@color/text_secondary" />
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnHomeSearchToggle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Search"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="@color/text_secondary" />
 
-            <androidx.appcompat.widget.AppCompatImageButton
-                android:id="@+id/btnHomeTags"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="end"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Tags"
-                android:src="@android:drawable/ic_menu_crop"
-                app:tint="@color/text_secondary" />
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnHomeLists"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Lists"
+                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    app:tint="@color/text_secondary" />
 
-            <androidx.appcompat.widget.AppCompatImageButton
-                android:id="@+id/btnHomeSettings"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="end"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Settings"
-                android:src="@android:drawable/ic_menu_preferences"
-                app:tint="@color/text_secondary" />
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnHomeTags"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Tags"
+                    android:src="@android:drawable/ic_menu_crop"
+                    app:tint="@color/text_secondary" />
 
-        </androidx.appcompat.widget.Toolbar>
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnHomeSettings"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Settings"
+                    android:src="@android:drawable/ic_menu_preferences"
+                    app:tint="@color/text_secondary" />
 
-        <!-- Search bar -->
-        <com.google.android.material.textfield.TextInputLayout
+            </androidx.appcompat.widget.Toolbar>
+
+            <!-- Inline Search bar (hidden by default) -->
+            <LinearLayout
+                android:id="@+id/searchLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@color/bg_primary"
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
+                
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnSearchBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_media_previous"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/text_secondary" />
+
+                <EditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:hint="Search library..."
+                    android:inputType="text"
+                    android:singleLine="true"
+                    android:background="@null"
+                    android:textColor="@color/text_primary" />
+                    
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnSearchClear"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/text_secondary" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Paste URL Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="8dp"
-            app:endIconMode="clear_text"
-            app:startIconDrawable="@android:drawable/ic_menu_search"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/toolbar_bg">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etSearch"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Search library..."
-                android:inputType="text"
-                android:singleLine="true"
-                android:textColor="@color/text_primary" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                    app:endIconMode="clear_text">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPasteUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Paste or type a URL..."
+                        android:inputType="textUri"
+                        android:singleLine="true"
+                        android:textColor="@color/text_primary" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPasteRead"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Read"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_marginEnd="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPasteSave"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="+ Save"
+                        android:backgroundTint="@color/accent"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Filter Chips (Horizontal) -->
         <HorizontalScrollView
