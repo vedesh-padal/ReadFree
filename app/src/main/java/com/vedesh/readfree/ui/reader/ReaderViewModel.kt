@@ -6,6 +6,7 @@ import com.vedesh.readfree.data.db.entity.Article
 import com.vedesh.readfree.data.repository.ArticleRepository
 import com.vedesh.readfree.data.repository.ListRepository
 import com.vedesh.readfree.data.repository.RaindropRepository
+import com.vedesh.readfree.data.repository.TagRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 class ReaderViewModel(
     private val articleRepo: ArticleRepository,
     private val listRepo: ListRepository,
+    private val tagRepo: TagRepository,
     private val raindropRepo: RaindropRepository
 ) : ViewModel() {
 
@@ -26,7 +28,7 @@ class ReaderViewModel(
         }
     }
 
-    fun saveArticle(url: String, title: String, listId: Long?, isMediumUrl: Boolean) {
+    fun saveArticle(url: String, title: String, listId: Long?, tags: List<String>, isMediumUrl: Boolean) {
         viewModelScope.launch {
             if (!articleRepo.exists(url)) {
                 articleRepo.insert(
@@ -36,9 +38,22 @@ class ReaderViewModel(
                         isMediumUrl = isMediumUrl
                     )
                 )
-                if (listId != null) {
-                    listRepo.addArticleToList(url, listId)
+            } else {
+                // Update title if it was loading before
+                articleRepo.getByUrl(url)?.let {
+                    if (it.title == "Loading..." || it.title == url) {
+                        articleRepo.update(it.copy(title = title))
+                    }
                 }
+            }
+            
+            if (listId != null) {
+                listRepo.addArticleToList(url, listId)
+            }
+            
+            tags.forEach { tagName ->
+                tagRepo.insert(com.vedesh.readfree.data.db.entity.Tag(tagName))
+                tagRepo.addTagToArticle(url, tagName)
             }
         }
     }
@@ -58,6 +73,15 @@ class ReaderViewModel(
     fun getArticle(url: String, callback: (Article?) -> Unit) {
         viewModelScope.launch {
             callback(articleRepo.getByUrl(url))
+        }
+    }
+
+    fun getArticleDetails(url: String, callback: (Article?, List<Long>, List<String>) -> Unit) {
+        viewModelScope.launch {
+            val article = articleRepo.getByUrl(url)
+            val listIds = listRepo.getListIdsForArticle(url)
+            val tags = tagRepo.getTagsForArticle(url)
+            callback(article, listIds, tags)
         }
     }
 

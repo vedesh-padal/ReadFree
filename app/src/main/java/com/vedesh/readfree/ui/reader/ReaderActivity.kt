@@ -6,6 +6,8 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.widget.RadioButton
@@ -306,11 +308,40 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             }
             
-            // Check if article is already saved, if not, show quick save sheet
+            // Check if article is already saved to show banner
             if (article == null) {
-                runOnUiThread { showQuickSaveSheet() }
+                runOnUiThread { showSaveBanner(isSaved = false) }
+            } else {
+                runOnUiThread { showSaveBanner(isSaved = true) }
             }
         }
+    }
+    
+    private val bannerHandler = Handler(Looper.getMainLooper())
+    private val hideBannerRunnable = Runnable { binding.saveBanner.visibility = View.GONE }
+
+    private fun showSaveBanner(isSaved: Boolean) {
+        binding.saveBanner.visibility = View.VISIBLE
+        if (isSaved) {
+            binding.tvBannerText.text = "In your library"
+            binding.btnBannerAction.text = "Edit"
+        } else {
+            binding.tvBannerText.text = "Add to library?"
+            binding.btnBannerAction.text = "Save"
+        }
+
+        binding.btnBannerAction.setOnClickListener {
+            hideBannerRunnable.run() // dismiss immediately
+            showQuickSaveSheet()
+        }
+
+        binding.btnBannerDismiss.setOnClickListener {
+            hideBannerRunnable.run()
+        }
+
+        // Auto-dismiss after 5s
+        bannerHandler.removeCallbacks(hideBannerRunnable)
+        bannerHandler.postDelayed(hideBannerRunnable, 5000)
     }
     
     private fun showQuickSaveSheet() {
@@ -328,6 +359,26 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         saveBinding?.tvSaveTitle?.text = "Loading title..."
         
         var selectedListId: Long? = null
+        val selectedTags = mutableSetOf<String>()
+
+        // Set up Tag input
+        saveBinding?.etAddTag?.setOnEditorActionListener { v, actionId, event ->
+            val text = v.text.toString().trim()
+            if (text.isNotEmpty() && text.length < 30) {
+                if (selectedTags.add(text.lowercase())) {
+                    val chip = com.google.android.material.chip.Chip(this)
+                    chip.text = text.lowercase()
+                    chip.isCloseIconVisible = true
+                    chip.setOnCloseIconClickListener {
+                        selectedTags.remove(chip.text.toString())
+                        saveBinding?.chipGroupTags?.removeView(chip)
+                    }
+                    saveBinding?.chipGroupTags?.addView(chip)
+                }
+                v.text = ""
+            }
+            true
+        }
 
         // Populate lists
         lifecycleScope.launch {
@@ -348,15 +399,43 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             }
         }
 
+        var isEditMode = false
+
+        // Fetch existing details if any
+        viewModel.getArticleDetails(currentArticleUrl) { article, listIds, tags ->
+            runOnUiThread {
+                if (article != null) {
+                    isEditMode = true
+                    saveBinding?.tvSaveTitle?.text = article.title
+                    saveBinding?.btnSaveAndClose?.text = "Update & Close"
+                    saveBinding?.btnReadNow?.text = "Update"
+                    selectedListId = listIds.firstOrNull()
+                    
+                    tags.forEach { tagName ->
+                        if (selectedTags.add(tagName.lowercase())) {
+                            val chip = com.google.android.material.chip.Chip(this@ReaderActivity)
+                            chip.text = tagName.lowercase()
+                            chip.isCloseIconVisible = true
+                            chip.setOnCloseIconClickListener {
+                                selectedTags.remove(chip.text.toString())
+                                saveBinding?.chipGroupTags?.removeView(chip)
+                            }
+                            saveBinding?.chipGroupTags?.addView(chip)
+                        }
+                    }
+                }
+            }
+        }
+
         saveBinding?.btnSaveAndClose?.setOnClickListener {
-            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, UrlUtils.isMediumDomain(currentArticleUrl))
+            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl))
             saveSheet?.dismiss()
-            Toast.makeText(this, "Saved to library", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (isEditMode) "Updated library" else "Saved to library", Toast.LENGTH_SHORT).show()
             finish()
         }
 
         saveBinding?.btnReadNow?.setOnClickListener {
-            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, UrlUtils.isMediumDomain(currentArticleUrl))
+            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl))
             saveSheet?.dismiss()
         }
 

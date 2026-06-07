@@ -20,7 +20,7 @@ class ViewModelFactory(
             return HomeViewModel(articleRepository, listRepository, tagRepository) as T
         }
         if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.reader.ReaderViewModel::class.java)) {
-            return com.vedesh.readfree.ui.reader.ReaderViewModel(articleRepository, listRepository, raindropRepository) as T
+            return com.vedesh.readfree.ui.reader.ReaderViewModel(articleRepository, listRepository, tagRepository, raindropRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
