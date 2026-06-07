@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/readerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <!-- Mini toolbar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:background="@color/toolbar_bg"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:elevation="4dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:id="@+id/urlBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/text_secondary"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:text="Loading…" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenBrowser"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Browser"
+            android:textSize="11sp"
+            android:paddingHorizontal="12dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/accent"
+            android:textColor="@color/accent" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_secondary"
+            android:contentDescription="Settings"
+            android:layout_marginStart="4dp" />
+
+    </LinearLayout>
+
+    <!-- WebView + centered loading overlay stacked in a FrameLayout -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- The actual WebView -->
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Centered loading overlay: shown while page is loading -->
+        <LinearLayout
+            android:id="@+id/loadingView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@color/bg_primary"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:indeterminateTint="@color/accent"
+                style="?android:attr/progressBarStyleLarge" />
+
+            <TextView
+                android:id="@+id/loadingText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Contacting Freedium…"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
+
+        </LinearLayout>
+
+        <!-- Error panel: shown when all mirrors fail or network is unavailable -->
+        <LinearLayout
+            android:id="@+id/errorView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:background="@color/bg_primary"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️"
+                android:textSize="48sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/errorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Could not reach Freedium."
+                android:textSize="15sp"
+                android:textColor="@color/text_primary"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/errorSubText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trying next mirror…"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:gravity="center"
+                android:layout_marginBottom="32dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Retry"
+                android:backgroundTint="@color/accent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnErrorSettings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Configure Mirror"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="@color/accent" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>
