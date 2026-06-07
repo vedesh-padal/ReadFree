@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity() {
             // Shared via the share sheet (e.g. share from Chrome)
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
-                val url = extractUrl(sharedText)
+                val url = UrlUtils.extractUrl(sharedText)
                 if (url != null) {
                     loadArticle(url)
                 } else {
@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
                     val url = request?.url?.toString() ?: return false
                     // Allow any mirror URL or known medium domain to load inside the WebView
                     val isMirror = MIRRORS.any { url.startsWith(it) }
-                    return if (isMirror || isMediumDomain(url)) {
+                    return if (isMirror || UrlUtils.isMediumDomain(url)) {
                         false // let WebView handle it
                     } else {
                         openInBrowser(url)
@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     binding.loadingView.visibility = View.GONE
-                    url?.let { binding.urlBar.text = formatUrlForDisplay(it) }
+                    url?.let { binding.urlBar.text = UrlUtils.formatUrlForDisplay(it) }
                 }
 
                 override fun onReceivedError(
@@ -348,30 +348,5 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
     }
-
-    private fun extractUrl(text: String): String? {
-        // Pull a URL out of shared text (Chrome shares "Title\nhttps://..." format)
-        val regex = Regex("https?://[^\\s]+")
-        return regex.find(text)?.value
-    }
-
-    private fun isMediumDomain(url: String): Boolean {
-        val knownMediumHosts = setOf(
-            "medium.com", "towardsdatascience.com", "betterprogramming.pub",
-            "levelup.gitconnected.com", "javascript.plainenglish.io",
-            "itnext.io", "blog.bitsrc.io", "hackernoon.com"
-        )
-        return try {
-            val host = Uri.parse(url).host ?: return false
-            knownMediumHosts.any { host.endsWith(it) }
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun formatUrlForDisplay(url: String): String {
-        return if (url.length > 60) url.take(57) + "…" else url
-    }
-
 
 }
