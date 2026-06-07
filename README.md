@@ -17,7 +17,7 @@ The article is loaded through a Freedium-compatible mirror. If the primary mirro
 ## Features
 
 - Share-sheet integration — catches `text/plain` shares from any app
-- Direct medium.com link interception
+- Direct medium.com link interception (when Medium app is not installed)
 - In-app WebView reader — no browser handoff
 - Centered loading overlay with status text
 - Auto-failover across multiple Freedium mirrors on network/HTTP errors
