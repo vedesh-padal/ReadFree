@@ -98,7 +98,12 @@ class HomeViewModel(
 
     fun deleteArticle(articleUrl: String) {
         viewModelScope.launch {
-            articleRepo.getByUrl(articleUrl)?.let { articleRepo.delete(it) }
+            articleRepo.getByUrl(articleUrl)?.let { article ->
+                article.offlineFilePath?.let { path ->
+                    try { java.io.File(path).delete() } catch (_: Exception) {}
+                }
+                articleRepo.delete(article)
+            }
         }
     }
 
