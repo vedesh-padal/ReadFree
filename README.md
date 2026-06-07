@@ -8,7 +8,7 @@ Read any Medium article for free — share a link, the app proxies it through a 
 
 1. **Share** a Medium link from any app (Chrome, Twitter, etc.) → select **ReadFree** from the share sheet
 2. **Or paste** a URL directly from the home screen
-3. **Or tap** a medium.com link — ReadFree will intercept it
+3. **Or tap** a medium.com link — ReadFree will appear as an option if the Medium app is not installed. If the Medium app is installed, it owns the domain via App Links and will open instead (use the share sheet in that case)
 
 The article is loaded through a Freedium-compatible mirror. If the primary mirror fails, the app automatically tries the next one. A gear icon in the toolbar lets you set your own preferred mirror URL.
 
