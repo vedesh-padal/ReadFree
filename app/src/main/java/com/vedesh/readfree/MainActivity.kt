@@ -4,10 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.webkit.SslErrorHandler
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -18,7 +14,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.vedesh.readfree.databinding.ActivityMainBinding
 import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var mirrors: MirrorRepository
@@ -111,74 +107,43 @@ class MainActivity : AppCompatActivity() {
                 useWideViewPort = true
                 builtInZoomControls = true
                 displayZoomControls = false
-                // Respect HTTP cache-control headers; falls back to cache if offline
                 cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             }
-
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): Boolean {
-                    val url = request?.url?.toString() ?: return false
-                    // Allow mirror URLs and known Medium domains inside the WebView;
-                    // everything else opens in the external browser.
-                    val isMirror = mirrors.builtInMirrors.any { url.startsWith(it) }
-                    return if (isMirror || UrlUtils.isMediumDomain(url)) {
-                        false
-                    } else {
-                        openInBrowser(url)
-                        true
-                    }
-                }
-
-                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                    super.onPageStarted(view, url, favicon)
-                    binding.loadingView.visibility = View.VISIBLE
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    binding.loadingView.visibility = View.GONE
-                    url?.let { binding.urlBar.text = UrlUtils.formatUrlForDisplay(it) }
-                }
-
-                override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: android.webkit.WebResourceError?
-                ) {
-                    super.onReceivedError(view, request, error)
-                    // Only react to main-frame failures, not sub-resource errors (images, scripts)
-                    if (request?.isForMainFrame == true) tryNextMirrorOrShowError()
-                }
-
-                override fun onReceivedHttpError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    errorResponse: android.webkit.WebResourceResponse?
-                ) {
-                    super.onReceivedHttpError(view, request, errorResponse)
-                    val statusCode = errorResponse?.statusCode ?: return
-                    // Only failover on server-side errors (5xx), not client errors (4xx)
-                    if (request?.isForMainFrame == true && statusCode >= 500) tryNextMirrorOrShowError()
-                }
-
-                override fun onReceivedSslError(
-                    view: WebView?,
-                    handler: SslErrorHandler?,
-                    error: android.net.http.SslError?
-                ) {
-                    binding.loadingView.visibility = View.GONE
-                    AlertDialog.Builder(this@MainActivity)
-                        .setTitle("SSL Certificate Warning")
-                        .setMessage("This site has a certificate issue. Proceed anyway? Your connection may not be secure.")
-                        .setPositiveButton("Proceed") { _, _ -> handler?.proceed() }
-                        .setNegativeButton("Cancel") { _, _ -> handler?.cancel() }
-                        .show()
-                }
-            }
+            webViewClient = ReadFreeWebViewClient(mirrors, this@MainActivity)
         }
+    }
+
+    // ── ReadFreeWebViewClient.Listener ────────────────────────────────────────
+
+    override fun onPageStarted() {
+        binding.loadingView.visibility = View.VISIBLE
+    }
+
+    override fun onPageFinished(url: String?) {
+        binding.loadingView.visibility = View.GONE
+        url?.let { binding.urlBar.text = UrlUtils.formatUrlForDisplay(it) }
+    }
+
+    override fun onMainFrameError() {
+        tryNextMirrorOrShowError()
+    }
+
+    override fun onMainFrameHttpError(statusCode: Int) {
+        tryNextMirrorOrShowError()
+    }
+
+    override fun onSslError(handler: android.webkit.SslErrorHandler?) {
+        binding.loadingView.visibility = View.GONE
+        AlertDialog.Builder(this)
+            .setTitle("SSL Certificate Warning")
+            .setMessage("This site has a certificate issue. Proceed anyway? Your connection may not be secure.")
+            .setPositiveButton("Proceed") { _, _ -> handler?.proceed() }
+            .setNegativeButton("Cancel") { _, _ -> handler?.cancel() }
+            .show()
+    }
+
+    override fun onExternalUrlRequested(url: String) {
+        openInBrowser(url)
     }
 
     // ── Mirror failover ───────────────────────────────────────────────────────
