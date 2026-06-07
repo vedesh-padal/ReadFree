@@ -14,5 +14,5 @@ class ReadFreeApp : Application() {
     val listRepository by lazy { ListRepository(database.listDao(), database) }
     val tagRepository by lazy { TagRepository(database.tagDao(), database) }
     val settingsRepository by lazy { SettingsRepository(this) }
-    val raindropRepository by lazy { RaindropRepository(settingsRepository) }
+    val raindropRepository by lazy { RaindropRepository(settingsRepository, articleRepository) }
 }

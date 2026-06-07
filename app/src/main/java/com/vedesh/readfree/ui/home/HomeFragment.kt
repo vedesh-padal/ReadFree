@@ -333,6 +333,24 @@ class HomeFragment : Fragment() {
         sheetBinding.etRaindropToken.setText(app.settingsRepository.getRaindropToken() ?: "")
         sheetBinding.switchRaindropSync.isChecked = app.settingsRepository.isRaindropSyncEnabled()
 
+        sheetBinding.btnVerifyToken.setOnClickListener {
+            val token = sheetBinding.etRaindropToken.text.toString().trim()
+            if (token.isEmpty()) {
+                sheetBinding.tvTokenStatus.text = "Enter a token first"
+                sheetBinding.tvTokenStatus.setTextColor(android.graphics.Color.RED)
+                return@setOnClickListener
+            }
+            sheetBinding.tvTokenStatus.text = "Verifying..."
+            app.raindropRepository.verifyToken(token) { success, message ->
+                requireActivity().runOnUiThread {
+                    sheetBinding.tvTokenStatus.text = message
+                    sheetBinding.tvTokenStatus.setTextColor(
+                        if (success) android.graphics.Color.GREEN else android.graphics.Color.RED,
+                    )
+                }
+            }
+        }
+
         if (app.settingsRepository.getRaindropSaveMode() == "API") {
             sheetBinding.radioGroupRaindropMode.check(R.id.radioRaindropApi)
         } else {
