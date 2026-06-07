@@ -56,8 +56,12 @@ class TagsFragment : Fragment() {
                                 text = "${tagWithCount.name} (${tagWithCount.articleCount})"
                                 isClickable = true
                                 setOnClickListener {
-                                    // Filter HomeFragment by tag logic to be implemented
-                                    findNavController().navigateUp()
+                                    val bundle =
+                                        android.os.Bundle().apply {
+                                            putString("tagName", tagWithCount.name)
+                                            putString("title", "#${tagWithCount.name}")
+                                        }
+                                    findNavController().navigate(R.id.action_tagsFragment_to_articleListFragment, bundle)
                                 }
                                 setOnLongClickListener {
                                     // Long press to delete for now

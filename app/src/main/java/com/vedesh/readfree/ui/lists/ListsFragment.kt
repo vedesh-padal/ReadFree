@@ -59,8 +59,12 @@ class ListsFragment : Fragment() {
         adapter =
             ListAdapterImpl(
                 onItemClick = { listWithCount ->
-                    findNavController().previousBackStackEntry?.savedStateHandle?.set("selectedListId", listWithCount.list.id)
-                    findNavController().navigateUp()
+                    val bundle =
+                        android.os.Bundle().apply {
+                            putLong("listId", listWithCount.list.id)
+                            putString("title", listWithCount.list.name)
+                        }
+                    findNavController().navigate(R.id.action_listsFragment_to_articleListFragment, bundle)
                 },
             )
         view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddList).setOnClickListener {

@@ -63,16 +63,6 @@ class HomeFragment : Fragment() {
         setupSearchAndFilters()
         observeViewModel()
 
-        findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<Long>(
-            "selectedListId",
-        )?.observe(viewLifecycleOwner) { listId ->
-            if (listId != null) {
-                binding.chipGroupFilters.clearCheck()
-                viewModel.setFilter(HomeViewModel.FilterType.LIST, listId = listId)
-                findNavController().currentBackStackEntry?.savedStateHandle?.remove<Long>("selectedListId")
-            }
-        }
-
         binding.btnHomeSettings.setOnClickListener {
             showSettingsSheet()
         }
@@ -204,13 +194,6 @@ class HomeFragment : Fragment() {
                 "All" -> viewModel.setFilter(HomeViewModel.FilterType.ALL)
                 "Unsorted" -> viewModel.setFilter(HomeViewModel.FilterType.UNSORTED)
                 "Offline" -> viewModel.setFilter(HomeViewModel.FilterType.OFFLINE)
-                else -> {
-                    // It's a custom list, find its ID from the lists StateFlow
-                    val list = viewModel.lists.value.find { it.list.name == text }
-                    if (list != null) {
-                        viewModel.setFilter(HomeViewModel.FilterType.LIST, listId = list.list.id)
-                    }
-                }
             }
         }
     }
@@ -222,38 +205,6 @@ class HomeFragment : Fragment() {
                     viewModel.articles.collectLatest { articles ->
                         adapter.submitList(articles)
                         binding.tvEmptyState.visibility = if (articles.isEmpty()) View.VISIBLE else View.GONE
-                    }
-                }
-
-                launch {
-                    viewModel.lists.collectLatest { lists ->
-                        // Remove old custom list chips
-                        val childrenToRemove = mutableListOf<View>()
-                        for (i in 0 until binding.chipGroupFilters.childCount) {
-                            val view = binding.chipGroupFilters.getChildAt(i)
-                            if (view.id != R.id.chipAll && view.id != R.id.chipUnsorted && view.id != R.id.chipOffline) {
-                                childrenToRemove.add(view)
-                            }
-                        }
-                        childrenToRemove.forEach { binding.chipGroupFilters.removeView(it) }
-
-                        // Add new chips
-                        lists.forEach { listWithCount ->
-                            val chip =
-                                Chip(requireContext()).apply {
-                                    text = listWithCount.list.name
-                                    isCheckable = true
-                                    setChipDrawable(
-                                        com.google.android.material.chip.ChipDrawable.createFromAttributes(
-                                            requireContext(),
-                                            null,
-                                            0,
-                                            com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice,
-                                        ),
-                                    )
-                                }
-                            binding.chipGroupFilters.addView(chip)
-                        }
                     }
                 }
             }

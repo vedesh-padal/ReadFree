@@ -19,14 +19,30 @@
     </fragment>
 
     <fragment
+        android:id="@+id/articleListFragment"
+        android:name="com.vedesh.readfree.ui.home.ArticleListFragment"
+        android:label="ArticleListFragment"
+        tools:layout="@layout/fragment_article_list">
+        <!-- Arguments are passed dynamically -->
+    </fragment>
+
+    <fragment
         android:id="@+id/listsFragment"
         android:name="com.vedesh.readfree.ui.lists.ListsFragment"
         android:label="ListsFragment"
-        tools:layout="@layout/fragment_lists" />
+        tools:layout="@layout/fragment_lists">
+        <action
+            android:id="@+id/action_listsFragment_to_articleListFragment"
+            app:destination="@id/articleListFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/tagsFragment"
         android:name="com.vedesh.readfree.ui.tags.TagsFragment"
         android:label="TagsFragment"
-        tools:layout="@layout/fragment_tags" />
+        tools:layout="@layout/fragment_tags">
+        <action
+            android:id="@+id/action_tagsFragment_to_articleListFragment"
+            app:destination="@id/articleListFragment" />
+    </fragment>
 </navigation>

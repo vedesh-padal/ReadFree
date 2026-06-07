@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.vedesh.readfree.MirrorRepository
+import com.vedesh.readfree.R
 import com.vedesh.readfree.ReadFreeApp
 import com.vedesh.readfree.ReadFreeWebViewClient
 import com.vedesh.readfree.UrlUtils
@@ -124,6 +125,8 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
+                allowFileAccess = true
+                allowContentAccess = true
                 loadWithOverviewMode = true
                 useWideViewPort = true
                 builtInZoomControls = true
@@ -314,6 +317,14 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             val offlinePath = article?.offlineFilePath
 
             runOnUiThread {
+                if (offlinePath != null && java.io.File(offlinePath).exists()) {
+                    binding.btnOffline.isEnabled = false
+                    binding.btnOffline.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY)
+                } else {
+                    binding.btnOffline.isEnabled = true
+                    binding.btnOffline.imageTintList = android.content.res.ColorStateList.valueOf(resources.getColor(R.color.text_primary, null))
+                }
+
                 if (isOffline() && offlinePath != null && java.io.File(offlinePath).exists()) {
                     binding.loadingText.text = "Loading offline version…"
                     binding.webView.loadUrl("file://$offlinePath")
