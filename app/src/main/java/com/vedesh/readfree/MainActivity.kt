@@ -1,6 +1,7 @@
 package com.vedesh.readfree
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -8,18 +9,27 @@ import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.vedesh.readfree.databinding.ActivityMainBinding
+import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var prefs: SharedPreferences
 
-    // Ordered list of Freedium-compatible mirrors to try on failure
+    companion object {
+        private const val PREFS_NAME = "readfree_prefs"
+        private const val PREF_MIRROR_URL = "mirror_url"
+    }
+
+    // Built-in fallback mirrors tried in order when the active mirror fails
     private val MIRRORS = listOf(
         "https://freedium.cfd/",
         "https://www.freedium.cfd/",
@@ -34,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
         setupWebView()
         setupToolbar()
@@ -226,6 +237,76 @@ class MainActivity : AppCompatActivity() {
                 binding.webView.goBack()
             }
         }
+
+        binding.btnSettings.setOnClickListener {
+            showSettingsSheet()
+        }
+    }
+
+    /**
+     * Returns the active mirror base URL.
+     * User-saved custom URL takes priority; falls back to the first built-in mirror.
+     */
+    private fun getMirrorBaseUrl(): String {
+        return prefs.getString(PREF_MIRROR_URL, MIRRORS[0]) ?: MIRRORS[0]
+    }
+
+    private fun showSettingsSheet() {
+        val sheet = BottomSheetDialog(this)
+        val sheetBinding = BottomSheetSettingsBinding.inflate(layoutInflater)
+        sheet.setContentView(sheetBinding.root)
+
+        val currentMirror = getMirrorBaseUrl()
+
+        // Pre-select the matching preset radio, or fall back to Custom
+        val presetRadios = listOf(
+            sheetBinding.radioMirror1,
+            sheetBinding.radioMirror2,
+            sheetBinding.radioMirror3
+        )
+        val matched = presetRadios.firstOrNull { it.tag as? String == currentMirror }
+        if (matched != null) {
+            matched.isChecked = true
+        } else {
+            sheetBinding.radioMirrorCustom.isChecked = true
+            sheetBinding.customUrlLayout.visibility = View.VISIBLE
+            sheetBinding.etCustomMirrorUrl.setText(currentMirror)
+        }
+
+        // Show/hide custom input based on selection
+        sheetBinding.radioGroupMirrors.setOnCheckedChangeListener { _, checkedId ->
+            sheetBinding.customUrlLayout.visibility =
+                if (checkedId == sheetBinding.radioMirrorCustom.id) View.VISIBLE else View.GONE
+        }
+
+        sheetBinding.btnApplyMirror.setOnClickListener {
+            val selected = sheetBinding.root.findViewById<RadioButton>(
+                sheetBinding.radioGroupMirrors.checkedRadioButtonId
+            )
+            val newUrl = if (selected?.id == sheetBinding.radioMirrorCustom.id) {
+                val custom = sheetBinding.etCustomMirrorUrl.text.toString().trim()
+                if (custom.isEmpty()) {
+                    Toast.makeText(this, "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                // Ensure it ends with a slash
+                if (custom.endsWith("/")) custom else "$custom/"
+            } else {
+                selected?.tag as? String ?: MIRRORS[0]
+            }
+
+            prefs.edit().putString(PREF_MIRROR_URL, newUrl).apply()
+            sheet.dismiss()
+            Toast.makeText(this, "Mirror set to: $newUrl", Toast.LENGTH_SHORT).show()
+
+            // If reader is open, reload the current article with the new mirror
+            if (currentArticleUrl.isNotEmpty() && binding.readerLayout.visibility == View.VISIBLE) {
+                currentMirrorIndex = 0
+                loadArticle(currentArticleUrl)
+            }
+        }
+
+        sheet.show()
     }
 
     private fun loadArticle(originalUrl: String) {
@@ -243,9 +324,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildFreediumUrl(originalUrl: String): String {
-        // If already a mirror URL, don't double-wrap
+        // If already a known mirror URL, don't double-wrap
         if (MIRRORS.any { originalUrl.startsWith(it) }) return originalUrl
-        return "${MIRRORS[currentMirrorIndex]}$originalUrl"
+        // Use user-chosen mirror first, fall back to indexed mirror during failover
+        val base = if (currentMirrorIndex == 0) getMirrorBaseUrl() else MIRRORS[currentMirrorIndex]
+        return "$base$originalUrl"
     }
 
     private fun showHomeScreen() {
