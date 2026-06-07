@@ -34,4 +34,10 @@ class ListsViewModel(
             listRepo.batchUpdateSortOrder(ids)
         }
     }
+
+    fun createList(name: String, emoji: String, colorHex: String) {
+        viewModelScope.launch {
+            listRepo.insert(com.vedesh.readfree.data.db.entity.ArticleList(name = name, emoji = emoji, colorHex = colorHex))
+        }
+    }
 }

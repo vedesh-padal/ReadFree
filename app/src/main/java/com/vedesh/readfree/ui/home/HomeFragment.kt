@@ -82,12 +82,6 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_homeFragment_to_tagsFragment)
         }
 
-        binding.fabAdd.setOnClickListener {
-            // Focus on Paste input and open keyboard
-            binding.etPasteUrl.requestFocus()
-            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-            imm.showSoftInput(binding.etPasteUrl, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-        }
     }
 
     private fun setupRecyclerView() {
@@ -226,73 +220,11 @@ class HomeFragment : Fragment() {
                                 setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
                             }
                             binding.chipGroupFilters.addView(chip)
+                    }
                         }
-
-                        // Add + New List chip
-                        val newChip = Chip(requireContext()).apply {
-                            text = "+ New List"
-                            isCheckable = false
-                            setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Action))
-                            setOnClickListener {
-                                showCreateListSheet()
-                            }
-                        }
-                        binding.chipGroupFilters.addView(newChip)
                     }
                 }
-            }
         }
-    }
-
-    private fun showCreateListSheet() {
-        val sheet = BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_create_list, null)
-        sheet.setContentView(view)
-
-        val etListName = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etListName)
-        val chipGroupEmojis = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojis)
-        val radioGroupColors = view.findViewById<RadioGroup>(R.id.radioGroupColors)
-        val btnCreateList = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
-
-        val emojis = listOf("📁", "📚", "💼", "🤖", "🎯", "⭐", "🔬", "🎨", "🌐", "📝", "🏠", "💡", "🔥", "🌱", "🎵", "🎮")
-        val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
-
-        emojis.forEach { emoji ->
-            val chip = Chip(requireContext()).apply {
-                text = emoji
-                isCheckable = true
-                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
-            }
-            chipGroupEmojis.addView(chip)
-        }
-
-        colors.forEach { colorHex ->
-            val rb = RadioButton(requireContext()).apply {
-                buttonTintList = android.content.res.ColorStateList.valueOf(Color.parseColor(colorHex))
-                tag = colorHex
-            }
-            radioGroupColors.addView(rb)
-        }
-
-        // Default selections
-        if (chipGroupEmojis.childCount > 0) (chipGroupEmojis.getChildAt(0) as Chip).isChecked = true
-        if (radioGroupColors.childCount > 0) (radioGroupColors.getChildAt(0) as RadioButton).isChecked = true
-
-        btnCreateList.setOnClickListener {
-            val name = etListName.text.toString().trim()
-            if (name.isNotEmpty()) {
-                val selectedEmojiChip = chipGroupEmojis.findViewById<Chip>(chipGroupEmojis.checkedChipId)
-                val emoji = selectedEmojiChip?.text?.toString() ?: "📁"
-                
-                val selectedColorRb = radioGroupColors.findViewById<RadioButton>(radioGroupColors.checkedRadioButtonId)
-                val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
-
-                viewModel.createList(name, emoji, color)
-                sheet.dismiss()
-            }
-        }
-
-        sheet.show()
     }
 
     private fun showArticleContextSheet(item: ArticleWithTags) {

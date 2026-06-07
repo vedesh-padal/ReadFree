@@ -26,4 +26,10 @@ class TagsViewModel(
             tagRepo.rename(oldName, newName)
         }
     }
+
+    fun createTag(name: String) {
+        viewModelScope.launch {
+            tagRepo.insert(com.vedesh.readfree.data.db.entity.Tag(name))
+        }
+    }
 }

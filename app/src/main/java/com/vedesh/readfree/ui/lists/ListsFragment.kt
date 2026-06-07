@@ -59,6 +59,9 @@ class ListsFragment : Fragment() {
                 findNavController().navigateUp()
             }
         )
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddList).setOnClickListener {
+            showCreateListSheet()
+        }
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
@@ -148,5 +151,55 @@ class ListsFragment : Fragment() {
                 return oldItem == newItem
             }
         }
+    }
+
+    private fun showCreateListSheet() {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_create_list, null)
+        sheet.setContentView(sheetView)
+
+        val etListName = sheetView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etListName)
+        val chipGroupEmojis = sheetView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojis)
+        val radioGroupColors = sheetView.findViewById<android.widget.RadioGroup>(R.id.radioGroupColors)
+        val btnCreateList = sheetView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
+
+        val emojis = listOf("📁", "📚", "💼", "🤖", "🎯", "⭐", "🔬", "🎨", "🌐", "📝", "🏠", "💡", "🔥", "🌱", "🎵", "🎮")
+        val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
+
+        emojis.forEach { emoji ->
+            val chip = com.google.android.material.chip.Chip(requireContext()).apply {
+                text = emoji
+                isCheckable = true
+                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
+            }
+            chipGroupEmojis.addView(chip)
+        }
+
+        colors.forEach { colorHex ->
+            val rb = android.widget.RadioButton(requireContext()).apply {
+                buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorHex))
+                tag = colorHex
+            }
+            radioGroupColors.addView(rb)
+        }
+
+        if (chipGroupEmojis.childCount > 0) (chipGroupEmojis.getChildAt(0) as com.google.android.material.chip.Chip).isChecked = true
+        if (radioGroupColors.childCount > 0) (radioGroupColors.getChildAt(0) as android.widget.RadioButton).isChecked = true
+
+        btnCreateList.setOnClickListener {
+            val name = etListName.text.toString().trim()
+            if (name.isNotEmpty()) {
+                val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
+                val emoji = selectedEmojiChip?.text?.toString() ?: "📁"
+                
+                val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
+                val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
+
+                viewModel.createList(name, emoji, color)
+                sheet.dismiss()
+            }
+        }
+        
+        sheet.show()
     }
 }

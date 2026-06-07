@@ -67,5 +67,21 @@ class TagsFragment : Fragment() {
                 }
             }
         }
+
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddTag).setOnClickListener {
+            val input = android.widget.EditText(requireContext())
+            input.hint = "Tag name"
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Create New Tag")
+                .setView(input)
+                .setPositiveButton("Create") { _, _ ->
+                    val name = input.text.toString().trim()
+                    if (name.isNotEmpty()) {
+                        viewModel.createTag(name)
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 }

@@ -24,41 +24,44 @@
                 app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6"
                 app:titleTextColor="@color/text_primary">
 
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnHomeSearchToggle"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="end"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_search"
-                    android:tint="@color/text_primary" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:layout_gravity="end">
 
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnHomeLists"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="end"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_lists"
-                    android:tint="@color/text_primary" />
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/btnHomeSearchToggle"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_search"
+                        android:tint="@color/text_primary" />
 
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnHomeTags"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="end"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_tags"
-                    android:tint="@color/text_primary" />
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/btnHomeLists"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_lists"
+                        android:tint="@color/text_primary" />
 
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnHomeSettings"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="end"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_settings"
-                    android:tint="@color/text_primary" />
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/btnHomeTags"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_tags"
+                        android:tint="@color/text_primary" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/btnHomeSettings"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_settings"
+                        android:tint="@color/text_primary" />
+                </LinearLayout>
 
             </androidx.appcompat.widget.Toolbar>
 
@@ -204,34 +207,30 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:listitem="@layout/item_article_card" />
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-    <TextView
-        android:id="@+id/tvEmptyState"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Library is empty.\nPaste a URL to save!"
-        android:textColor="@color/text_secondary"
-        android:textAlignment="center"
-        android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="88dp"
+            tools:listitem="@layout/item_article_card" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:contentDescription="Add Article"
-        app:srcCompat="@drawable/ic_add"
-        app:backgroundTint="@color/accent"
-        app:tint="@color/bg_primary" />
+        <TextView
+            android:id="@+id/tvEmptyState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="32dp"
+            android:text="Library is empty.\nPaste a URL to save!"
+            android:textColor="@color/text_secondary"
+            android:textAlignment="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
