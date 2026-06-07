@@ -534,7 +534,9 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             } else {
                 runOnUiThread {
-                    Toast.makeText(this, "Failed to save offline", Toast.LENGTH_SHORT).show()
+                    com.google.android.material.snackbar.Snackbar
+                        .make(binding.root, "Could not save offline — page has cross-origin restrictions", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                        .show()
                 }
             }
         }
