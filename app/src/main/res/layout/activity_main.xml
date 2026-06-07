@@ -6,6 +6,20 @@
     android:layout_height="match_parent"
     android:background="@color/bg_primary">
 
+    <!-- Settings button for the home screen (top-right overlay) -->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/btnHomeSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_preferences"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="@color/text_secondary"
+        android:contentDescription="Settings"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- ═══════════════════════════════════════════
          HOME SCREEN — shown when app opens without a link
          ═══════════════════════════════════════════ -->
@@ -227,6 +241,15 @@
                     android:layout_height="wrap_content"
                     android:text="Retry"
                     android:backgroundTint="@color/accent" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnErrorSettings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Configure Mirror"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:textColor="@color/accent" />
 
             </LinearLayout>
 

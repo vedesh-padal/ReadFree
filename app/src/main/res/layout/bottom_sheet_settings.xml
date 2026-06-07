@@ -42,31 +42,13 @@
         android:layout_marginBottom="16dp">
 
         <RadioButton
-            android:id="@+id/radioMirror1"
+            android:id="@+id/radioMirrorDefault"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="freedium.cfd"
+            android:text="freedium-mirror.cfd (Default)"
             android:textColor="@color/text_primary"
             android:buttonTint="@color/accent"
-            android:tag="https://freedium.cfd/" />
-
-        <RadioButton
-            android:id="@+id/radioMirror2"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="www.freedium.cfd"
-            android:textColor="@color/text_primary"
-            android:buttonTint="@color/accent"
-            android:tag="https://www.freedium.cfd/" />
-
-        <RadioButton
-            android:id="@+id/radioMirror3"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="scribe.rip"
-            android:textColor="@color/text_primary"
-            android:buttonTint="@color/accent"
-            android:tag="https://scribe.rip/" />
+            android:tag="https://freedium-mirror.cfd/" />
 
         <RadioButton
             android:id="@+id/radioMirrorCustom"
