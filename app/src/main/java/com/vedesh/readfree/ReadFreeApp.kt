@@ -33,18 +33,10 @@ class ReadFreeApp : Application() {
                     putExtra(Intent.EXTRA_SUBJECT, title)
                 }
             try {
-                // Try Raindrop app directly first
-                intent.setPackage("com.raindrop.android")
-                context.startActivity(intent)
+                context.startActivity(Intent.createChooser(intent, "Share to Raindrop"))
                 onResult?.invoke(true)
             } catch (_: Exception) {
-                try {
-                    // Fallback: show chooser
-                    context.startActivity(Intent.createChooser(intent, "Save to Raindrop"))
-                    onResult?.invoke(true)
-                } catch (_: Exception) {
-                    onResult?.invoke(false)
-                }
+                onResult?.invoke(false)
             }
         } else {
             raindropRepository.syncArticle(url, title, onResult, requireSyncEnabled = false)

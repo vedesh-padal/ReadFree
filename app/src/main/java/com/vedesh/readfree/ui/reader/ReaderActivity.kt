@@ -480,16 +480,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             runOnUiThread {
                 if (isOffline() && offlinePath != null && java.io.File(offlinePath).exists()) {
                     binding.loadingText.text = "Loading offline version…"
-                    // Load saved HTML with the original URL as base (avoids cid: crash from .mht)
-                    try {
-                        val html = java.io.File(offlinePath).readText(java.nio.charset.StandardCharsets.UTF_8)
-                        binding.webView.loadDataWithBaseURL(cleanUrl, html, "text/html", "UTF-8", null)
-                    } catch (e: Exception) {
-                        binding.loadingView.visibility = View.GONE
-                        binding.errorView.visibility = View.VISIBLE
-                        binding.errorText.text = "Failed to load offline version."
-                        binding.errorSubText.text = e.localizedMessage ?: "The saved file may be corrupted."
-                    }
+                    binding.webView.loadUrl("file://$offlinePath")
                 } else {
                     val loadUrl = if (UrlUtils.isMediumDomain(cleanUrl)) mirrors.buildProxyUrl(cleanUrl) else cleanUrl
                     binding.webView.loadUrl(loadUrl)
@@ -762,49 +753,32 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         val dir = java.io.File(filesDir, "offline")
         if (!dir.exists()) dir.mkdirs()
 
-        val filePath = java.io.File(dir, "${currentArticleUrl.hashCode()}.html").absolutePath
-
-        // Extract full page HTML via JS (avoids cid: crash from .mht files)
-        binding.webView.evaluateJavascript(
-            "(function() { var dt = document.doctype ? '<!DOCTYPE ' + document.doctype.name + '>' : ''; return dt + '<html>' + document.documentElement.innerHTML + '</html>'; })();",
-        ) { htmlRaw ->
-            if (htmlRaw != null && htmlRaw != "null" && htmlRaw.length > 20) {
-                try {
-                    val html = org.json.JSONTokener(htmlRaw).nextValue().toString()
-                    java.io.File(filePath).writeText(html, java.nio.charset.StandardCharsets.UTF_8)
-                    updateOfflinePathInDb(filePath)
-                } catch (e: Exception) {
+        val filePath = java.io.File(dir, "${currentArticleUrl.hashCode()}.mht").absolutePath
+        binding.webView.saveWebArchive(filePath, false) { savedPath ->
+            if (savedPath != null) {
+                // Update database
+                viewModel.getArticle(currentArticleUrl) { article ->
+                    if (article != null) {
+                        viewModel.updateOfflinePath(currentArticleUrl, savedPath)
+                    } else {
+                        val title = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Untitled Article"
+                        suppressBanner = true
+                        viewModel.saveArticle(currentArticleUrl, title, null, emptyList(), UrlUtils.isMediumDomain(currentArticleUrl))
+                        viewModel.updateOfflinePath(currentArticleUrl, savedPath)
+                        isSaved = true
+                        currentReadState = com.vedesh.readfree.data.db.entity.ReadState.UNREAD
+                    }
                     runOnUiThread {
-                        com.google.android.material.snackbar.Snackbar
-                            .make(binding.root, "Failed to save offline: ${e.localizedMessage}", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
-                            .show()
+                        updateBottomBar()
+                        Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
                 runOnUiThread {
                     com.google.android.material.snackbar.Snackbar
-                        .make(binding.root, "Could not save offline — page may have restrictions", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                        .make(binding.root, "Could not save offline — page has cross-origin restrictions", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
                         .show()
                 }
-            }
-        }
-    }
-
-    private fun updateOfflinePathInDb(filePath: String) {
-        viewModel.getArticle(currentArticleUrl) { article ->
-            if (article != null) {
-                viewModel.updateOfflinePath(currentArticleUrl, filePath)
-            } else {
-                val title = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Untitled Article"
-                suppressBanner = true
-                viewModel.saveArticle(currentArticleUrl, title, null, emptyList(), UrlUtils.isMediumDomain(currentArticleUrl))
-                viewModel.updateOfflinePath(currentArticleUrl, filePath)
-                isSaved = true
-                currentReadState = com.vedesh.readfree.data.db.entity.ReadState.UNREAD
-            }
-            runOnUiThread {
-                updateBottomBar()
-                Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
             }
         }
     }
