@@ -106,6 +106,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
         if (url != null) {
             loadArticle(url)
+            
+            if (intent.getBooleanExtra("show_save_sheet", false) || intent.action == Intent.ACTION_SEND) {
+                // We delay slightly to let the view settle if needed, but direct call is fine
+                binding.root.post {
+                    showQuickSaveSheet()
+                }
+            }
         } else {
             finish()
         }

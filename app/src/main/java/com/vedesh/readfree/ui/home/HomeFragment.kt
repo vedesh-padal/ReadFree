@@ -75,8 +75,12 @@ class HomeFragment : Fragment() {
         }
 
         binding.fabAdd.setOnClickListener {
-            // For now, launch intent directly, but Phase 4 covers the Quick Save Bottom Sheet.
-            Toast.makeText(requireContext(), "Use Share intent to save for now. Phase 4 adds Quick Save Sheet.", Toast.LENGTH_SHORT).show()
+            // Focus on Paste input and open keyboard
+            binding.toolbar.visibility = View.GONE
+            binding.searchLayout.visibility = View.VISIBLE
+            binding.etSearch.requestFocus()
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(binding.etSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
     }
 
@@ -155,8 +159,10 @@ class HomeFragment : Fragment() {
         binding.btnPasteSave.setOnClickListener {
             val url = binding.etPasteUrl.text.toString().trim()
             if (url.isNotEmpty()) {
-                // In a complete implementation, this opens SaveBottomSheet directly.
-                Toast.makeText(requireContext(), "Save Bottom Sheet should open here. For now use Share intent or open Reader.", Toast.LENGTH_SHORT).show()
+                val intent = Intent(requireContext(), ReaderActivity::class.java)
+                intent.putExtra("url", url)
+                intent.putExtra("show_save_sheet", true)
+                startActivity(intent)
             } else {
                 Toast.makeText(requireContext(), "Enter a URL first", Toast.LENGTH_SHORT).show()
             }
