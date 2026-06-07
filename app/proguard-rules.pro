@@ -1,0 +1,3 @@
+-keepattributes *Annotation*
+-keep class com.vedesh.readfree.** { *; }
+-dontwarn okhttp3.**

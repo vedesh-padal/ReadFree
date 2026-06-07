@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ReadFree"
+        android:usesCleartextTraffic="false">
+
+        <!-- Main launcher activity (for opening the app directly) -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize">
+
+            <!-- Launcher icon -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                Share target: appears in Android share sheet when any app shares text/plain.
+                This is how Medium links from Chrome, Twitter, etc. get sent to us.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <!--
+                Direct link handling: if someone taps a medium.com link and
+                chooses this app, it opens here directly.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="medium.com" />
+                <data android:scheme="https" android:host="medium.com" />
+                <data android:scheme="https" android:host="*.medium.com" />
+                <!-- common Medium publications -->
+                <data android:scheme="https" android:host="towardsdatascience.com" />
+                <data android:scheme="https" android:host="betterprogramming.pub" />
+                <data android:scheme="https" android:host="levelup.gitconnected.com" />
+                <data android:scheme="https" android:host="javascript.plainenglish.io" />
+                <data android:scheme="https" android:host="itnext.io" />
+            </intent-filter>
+
+        </activity>
+    </application>
+
+</manifest>
