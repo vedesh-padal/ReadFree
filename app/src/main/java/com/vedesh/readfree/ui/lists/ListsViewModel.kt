@@ -46,4 +46,10 @@ class ListsViewModel(
             listRepo.insert(com.vedesh.readfree.data.db.entity.ArticleList(name = name, emoji = emoji, colorHex = colorHex))
         }
     }
+
+    fun restoreList(list: com.vedesh.readfree.data.db.entity.ArticleList) {
+        viewModelScope.launch {
+            listRepo.insert(list)
+        }
+    }
 }

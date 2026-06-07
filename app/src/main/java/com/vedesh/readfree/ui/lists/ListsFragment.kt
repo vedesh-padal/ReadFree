@@ -111,7 +111,7 @@ class ListsFragment : Fragment() {
                         viewModel.deleteList(item.list)
                         Snackbar.make(view, "List deleted", Snackbar.LENGTH_LONG)
                             .setAction("Undo") {
-                                // Undo logic would re-insert the list. For now just show toast or omit.
+                                viewModel.restoreList(item.list)
                             }.show()
                     }
                 },
