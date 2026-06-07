@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bottom_sheet_bg">
+
+    <TextView
+        android:id="@+id/tvContextTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Article Title"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextOpen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📖 Open in Reader"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="✏️ Edit List &amp; Tags"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextRaindrop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🌧 Send to Raindrop"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextCopy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔗 Copy URL"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextShare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="↗️ Share"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextMarkRead"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="✓ Mark as Read"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContextDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🗑 Remove from Library"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="#F44336" />
+
+</LinearLayout>

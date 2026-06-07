@@ -15,14 +15,15 @@ import com.vedesh.readfree.data.model.ArticleWithTags
 import com.vedesh.readfree.databinding.ItemArticleCardBinding
 
 class ArticleAdapter(
-    private val onClick: (ArticleWithTags) -> Unit
+    private val onClick: (ArticleWithTags) -> Unit,
+    private val onLongClick: (ArticleWithTags) -> Unit
 ) : ListAdapter<ArticleWithTags, ArticleAdapter.ViewHolder>(ArticleDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemArticleCardBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return ViewHolder(binding, onClick)
+        return ViewHolder(binding, onClick, onLongClick)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -31,11 +32,16 @@ class ArticleAdapter(
 
     class ViewHolder(
         private val binding: ItemArticleCardBinding,
-        private val onClick: (ArticleWithTags) -> Unit
+        private val onClick: (ArticleWithTags) -> Unit,
+        private val onLongClick: (ArticleWithTags) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: ArticleWithTags) {
             binding.root.setOnClickListener { onClick(item) }
+            binding.root.setOnLongClickListener { 
+                onLongClick(item)
+                true
+            }
 
             binding.tvTitle.text = item.article.title.ifEmpty { "Untitled Article" }
             binding.tvUrl.text = UrlUtils.formatUrlForDisplay(item.article.url)

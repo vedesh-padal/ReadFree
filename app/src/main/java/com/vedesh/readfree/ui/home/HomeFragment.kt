@@ -28,6 +28,10 @@ import com.vedesh.readfree.ui.ViewModelFactory
 import com.vedesh.readfree.ui.reader.ReaderActivity
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.graphics.Color
+import android.widget.RadioGroup
+import com.vedesh.readfree.data.model.ArticleWithTags
+import com.vedesh.readfree.data.db.entity.ReadState
 
 class HomeFragment : Fragment() {
 
@@ -68,11 +72,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = ArticleAdapter { articleWithTags ->
-            val intent = Intent(requireContext(), ReaderActivity::class.java)
-            intent.putExtra("url", articleWithTags.article.url)
-            startActivity(intent)
-        }
+        adapter = ArticleAdapter(
+            onClick = { articleWithTags ->
+                val intent = Intent(requireContext(), ReaderActivity::class.java)
+                intent.putExtra("url", articleWithTags.article.url)
+                startActivity(intent)
+            },
+            onLongClick = { articleWithTags ->
+                showArticleContextSheet(articleWithTags)
+            }
+        )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
 
@@ -157,10 +166,132 @@ class HomeFragment : Fragment() {
                             }
                             binding.chipGroupFilters.addView(chip)
                         }
+
+                        // Add + New List chip
+                        val newChip = Chip(requireContext()).apply {
+                            text = "+ New List"
+                            isCheckable = false
+                            setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Action))
+                            setOnClickListener {
+                                showCreateListSheet()
+                            }
+                        }
+                        binding.chipGroupFilters.addView(newChip)
                     }
                 }
             }
         }
+    }
+
+    private fun showCreateListSheet() {
+        val sheet = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_create_list, null)
+        sheet.setContentView(view)
+
+        val etListName = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etListName)
+        val chipGroupEmojis = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojis)
+        val radioGroupColors = view.findViewById<RadioGroup>(R.id.radioGroupColors)
+        val btnCreateList = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
+
+        val emojis = listOf("📁", "📚", "💼", "🤖", "🎯", "⭐", "🔬", "🎨", "🌐", "📝", "🏠", "💡", "🔥", "🌱", "🎵", "🎮")
+        val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
+
+        emojis.forEach { emoji ->
+            val chip = Chip(requireContext()).apply {
+                text = emoji
+                isCheckable = true
+                setChipDrawable(com.google.android.material.chip.ChipDrawable.createFromAttributes(requireContext(), null, 0, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice))
+            }
+            chipGroupEmojis.addView(chip)
+        }
+
+        colors.forEach { colorHex ->
+            val rb = RadioButton(requireContext()).apply {
+                buttonTintList = android.content.res.ColorStateList.valueOf(Color.parseColor(colorHex))
+                tag = colorHex
+            }
+            radioGroupColors.addView(rb)
+        }
+
+        // Default selections
+        if (chipGroupEmojis.childCount > 0) (chipGroupEmojis.getChildAt(0) as Chip).isChecked = true
+        if (radioGroupColors.childCount > 0) (radioGroupColors.getChildAt(0) as RadioButton).isChecked = true
+
+        btnCreateList.setOnClickListener {
+            val name = etListName.text.toString().trim()
+            if (name.isNotEmpty()) {
+                val selectedEmojiChip = chipGroupEmojis.findViewById<Chip>(chipGroupEmojis.checkedChipId)
+                val emoji = selectedEmojiChip?.text?.toString() ?: "📁"
+                
+                val selectedColorRb = radioGroupColors.findViewById<RadioButton>(radioGroupColors.checkedRadioButtonId)
+                val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
+
+                viewModel.createList(name, emoji, color)
+                sheet.dismiss()
+            }
+        }
+
+        sheet.show()
+    }
+
+    private fun showArticleContextSheet(item: ArticleWithTags) {
+        val sheet = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_article_context, null)
+        sheet.setContentView(view)
+
+        view.findViewById<android.widget.TextView>(R.id.tvContextTitle).text = item.article.title
+
+        view.findViewById<View>(R.id.btnContextOpen).setOnClickListener {
+            sheet.dismiss()
+            val intent = Intent(requireContext(), ReaderActivity::class.java)
+            intent.putExtra("url", item.article.url)
+            startActivity(intent)
+        }
+
+        view.findViewById<View>(R.id.btnContextEdit).setOnClickListener {
+            sheet.dismiss()
+            // In a full implementation, this opens SaveBottomSheet from HomeFragment.
+            // For now, we can show a Toast.
+            Toast.makeText(requireContext(), "Edit List & Tags via ReaderActivity right now.", Toast.LENGTH_SHORT).show()
+        }
+
+        view.findViewById<View>(R.id.btnContextRaindrop).setOnClickListener {
+            sheet.dismiss()
+            val app = requireContext().applicationContext as ReadFreeApp
+            app.raindropRepository.syncArticle(item.article.url, item.article.title)
+            Toast.makeText(requireContext(), "Sent to Raindrop", Toast.LENGTH_SHORT).show()
+        }
+
+        view.findViewById<View>(R.id.btnContextCopy).setOnClickListener {
+            sheet.dismiss()
+            val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("URL", item.article.url)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(requireContext(), "URL copied", Toast.LENGTH_SHORT).show()
+        }
+
+        view.findViewById<View>(R.id.btnContextShare).setOnClickListener {
+            sheet.dismiss()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, item.article.url)
+            }
+            startActivity(Intent.createChooser(intent, "Share via"))
+        }
+
+        val btnMarkRead = view.findViewById<android.widget.Button>(R.id.btnContextMarkRead)
+        btnMarkRead.text = if (item.article.readState == ReadState.READ) "Mark as Unread" else "✓ Mark as Read"
+        btnMarkRead.setOnClickListener {
+            sheet.dismiss()
+            viewModel.toggleReadState(item.article.url, item.article.readState)
+        }
+
+        view.findViewById<View>(R.id.btnContextDelete).setOnClickListener {
+            sheet.dismiss()
+            viewModel.deleteArticle(item.article.url)
+        }
+
+        sheet.show()
     }
 
     private fun showSettingsSheet() {
