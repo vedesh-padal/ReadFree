@@ -3,11 +3,14 @@ package com.vedesh.readfree.ui.reader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vedesh.readfree.data.db.entity.Article
+import com.vedesh.readfree.data.db.entity.ReadState
 import com.vedesh.readfree.data.repository.ArticleRepository
 import com.vedesh.readfree.data.repository.ListRepository
 import com.vedesh.readfree.data.repository.RaindropRepository
 import com.vedesh.readfree.data.repository.TagRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -23,6 +26,9 @@ class ReaderViewModel(
             SharingStarted.WhileSubscribed(5000),
             emptyList(),
         )
+
+    private val _progressPercentage = MutableStateFlow(0)
+    val progressPercentage: StateFlow<Int> = _progressPercentage
 
     fun checkIfExists(
         url: String,
@@ -103,15 +109,33 @@ class ReaderViewModel(
         }
     }
 
+    fun setReadState(
+        url: String,
+        state: ReadState,
+    ) {
+        viewModelScope.launch { articleRepo.updateReadState(url, state) }
+    }
+
+    fun toggleReadState(url: String) {
+        viewModelScope.launch {
+            articleRepo.getByUrl(url)?.let { article ->
+                val newState = if (article.readState == ReadState.READ) ReadState.UNREAD else ReadState.READ
+                articleRepo.update(article.copy(readState = newState))
+            }
+        }
+    }
+
     fun updateScrollProgress(
         url: String,
         scrollY: Int,
         percentage: Float,
     ) {
+        val pctInt = percentage.toInt().coerceIn(0, 100)
+        _progressPercentage.value = pctInt
         viewModelScope.launch {
             articleRepo.getByUrl(url)?.let { article ->
                 val newProgress = scrollY
-                val newState = if (percentage > 90f) com.vedesh.readfree.data.db.entity.ReadState.READ else article.readState
+                val newState = if (pctInt >= 90) com.vedesh.readfree.data.db.entity.ReadState.READ else article.readState
 
                 if (article.scrollProgress != newProgress || article.readState != newState) {
                     articleRepo.update(article.copy(scrollProgress = newProgress, readState = newState))

@@ -59,7 +59,15 @@
             android:contentDescription="Save Offline"
             android:layout_marginStart="4dp" />
 
-
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnReaderMore"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_more"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="More"
+            android:layout_marginStart="2dp" />
 
     </LinearLayout>
 
@@ -206,5 +214,79 @@
         </com.google.android.material.card.MaterialCardView>
 
     </FrameLayout>
+
+    <!-- Reading Progress Bar (2dp) -->
+    <ProgressBar
+        android:id="@+id/readingProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:progressTint="@color/accent"
+        android:max="100"
+        android:progress="0"
+        android:visibility="gone" />
+
+    <!-- Bottom Action Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical|center_horizontal"
+        android:background="@color/toolbar_bg"
+        android:elevation="8dp"
+        android:paddingHorizontal="8dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBottomBookmark"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:src="@drawable/ic_bookmark_outline"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="Save" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBottomMarkRead"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:src="@drawable/ic_read"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_tertiary"
+            android:contentDescription="Mark Read"
+            android:enabled="false" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBottomRaindrop"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:src="@drawable/ic_raindrop"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="Send to Raindrop" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBottomBrowser"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:src="@drawable/ic_open_in_browser"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="Open in Browser" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBottomSettings"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:src="@drawable/ic_settings"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/text_primary"
+            android:contentDescription="Settings" />
+
+    </LinearLayout>
 
 </LinearLayout>

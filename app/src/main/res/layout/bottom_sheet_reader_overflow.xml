@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bottom_sheet_bg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="More"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverflowMoveToList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📋 Move to List"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverflowEditTags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🏷 Add/Edit Tags"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverflowSaveOffline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📥 Save Offline"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverflowCopyUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔗 Copy URL"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverflowShare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="↗️ Share"
+        android:gravity="start|center_vertical"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="@color/text_primary" />
+
+</LinearLayout>

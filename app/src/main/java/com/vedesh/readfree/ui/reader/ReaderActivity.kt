@@ -47,6 +47,8 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     private var saveBinding: BottomSheetSaveBinding? = null
 
     private var suppressBanner = false
+    private var isSaved = false
+    private var currentReadState = com.vedesh.readfree.data.db.entity.ReadState.UNREAD
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +64,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             saveOffline()
         }
         binding.btnErrorSettings.setOnClickListener {
-            // Can open an intent to Home or leave as a toast
             android.widget.Toast.makeText(this, "Please configure mirror in Home Settings", android.widget.Toast.LENGTH_SHORT).show()
         }
 
@@ -73,7 +74,115 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             }
         }
 
+        // Bottom action bar buttons
+        binding.btnBottomBookmark.setOnClickListener {
+            showQuickSaveSheet()
+        }
+
+        binding.btnBottomMarkRead.setOnClickListener {
+            toggleReadState()
+        }
+
+        binding.btnBottomRaindrop.setOnClickListener {
+            if (currentArticleUrl.isEmpty()) return@setOnClickListener
+            val app = applicationContext as ReadFreeApp
+            app.raindropRepository.syncArticle(currentArticleUrl, binding.webView.title ?: currentArticleUrl)
+            Toast.makeText(this, "Sent to Raindrop", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnBottomBrowser.setOnClickListener {
+            binding.webView.url?.let { url -> openInBrowser(url) }
+        }
+
+        binding.btnBottomSettings.setOnClickListener {
+            showSettingsSheet()
+        }
+
+        // Overflow menu button
+        binding.btnReaderMore.setOnClickListener {
+            showOverflowSheet()
+        }
+
+        // Observe progress for the reading progress bar
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.progressPercentage.collectLatest { pct ->
+                    binding.readingProgress.progress = pct
+                    binding.readingProgress.visibility = if (pct > 0 && pct < 100) View.VISIBLE else View.GONE
+                }
+            }
+        }
+
         handleIntent(intent)
+    }
+
+    private fun toggleReadState() {
+        if (!isSaved || currentArticleUrl.isEmpty()) return
+        currentReadState = if (currentReadState == com.vedesh.readfree.data.db.entity.ReadState.READ)
+            com.vedesh.readfree.data.db.entity.ReadState.UNREAD
+        else
+            com.vedesh.readfree.data.db.entity.ReadState.READ
+        viewModel.setReadState(currentArticleUrl, currentReadState)
+        updateBottomBar()
+    }
+
+    private fun updateBottomBar() {
+        if (isSaved) {
+            binding.btnBottomBookmark.setImageResource(R.drawable.ic_bookmark)
+            binding.btnBottomBookmark.imageTintList = android.content.res.ColorStateList.valueOf(resources.getColor(R.color.accent, null))
+            binding.btnBottomMarkRead.isEnabled = true
+            binding.btnBottomMarkRead.imageTintList = android.content.res.ColorStateList.valueOf(
+                if (currentReadState == com.vedesh.readfree.data.db.entity.ReadState.READ)
+                    resources.getColor(R.color.read_state_read, null)
+                else
+                    resources.getColor(R.color.text_primary, null)
+            )
+        } else {
+            binding.btnBottomBookmark.setImageResource(R.drawable.ic_bookmark_outline)
+            binding.btnBottomBookmark.imageTintList = android.content.res.ColorStateList.valueOf(resources.getColor(R.color.text_primary, null))
+            binding.btnBottomMarkRead.isEnabled = false
+            binding.btnBottomMarkRead.imageTintList = android.content.res.ColorStateList.valueOf(resources.getColor(R.color.text_tertiary, null))
+        }
+    }
+
+    private fun showOverflowSheet() {
+        val sheet = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_reader_overflow, null)
+        sheet.setContentView(view)
+
+        view.findViewById<View>(R.id.btnOverflowMoveToList).setOnClickListener {
+            sheet.dismiss()
+            showQuickSaveSheet()
+        }
+
+        view.findViewById<View>(R.id.btnOverflowEditTags).setOnClickListener {
+            sheet.dismiss()
+            showQuickSaveSheet()
+        }
+
+        view.findViewById<View>(R.id.btnOverflowSaveOffline).setOnClickListener {
+            sheet.dismiss()
+            saveOffline()
+        }
+
+        view.findViewById<View>(R.id.btnOverflowCopyUrl).setOnClickListener {
+            sheet.dismiss()
+            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("URL", currentArticleUrl)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "URL copied", Toast.LENGTH_SHORT).show()
+        }
+
+        view.findViewById<View>(R.id.btnOverflowShare).setOnClickListener {
+            sheet.dismiss()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, currentArticleUrl)
+            }
+            startActivity(Intent.createChooser(intent, "Share via"))
+        }
+
+        sheet.show()
     }
 
     private fun setupBackNavigation() {
@@ -338,13 +447,18 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             }
 
+            // Track saved state and read state for bottom bar
+            isSaved = article != null
+            if (article != null) {
+                currentReadState = article.readState
+            }
+            runOnUiThread { updateBottomBar() }
+
             // Banner logic: only show 'in library' if the article was explicitly saved
-            // (has a non-empty title from SaveSheet). A download-only article has suppressBanner=true.
             if (article == null) {
                 runOnUiThread { showSaveBanner(isSaved = false) }
             } else if (suppressBanner) {
                 suppressBanner = false
-                // Don't show banner — this was a download-only save
             } else {
                 runOnUiThread { showSaveBanner(isSaved = true) }
             }
@@ -485,6 +599,9 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 selectedTags.toList(),
                 UrlUtils.isMediumDomain(currentArticleUrl),
             )
+            isSaved = true
+            currentReadState = com.vedesh.readfree.data.db.entity.ReadState.UNREAD
+            updateBottomBar()
             saveSheet?.dismiss()
         }
 
@@ -527,8 +644,11 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                         suppressBanner = true
                         viewModel.saveArticle(currentArticleUrl, title, null, emptyList(), UrlUtils.isMediumDomain(currentArticleUrl))
                         viewModel.updateOfflinePath(currentArticleUrl, savedPath)
+                        isSaved = true
+                        currentReadState = com.vedesh.readfree.data.db.entity.ReadState.UNREAD
                     }
                     runOnUiThread {
+                        updateBottomBar()
                         Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
                     }
                 }
