@@ -55,7 +55,6 @@ class ReaderViewModel(
                 tagRepo.addTagToArticle(url, tagName)
             }
         }
-    }
 
     fun updateTitle(url: String, newTitle: String) {
         viewModelScope.launch {

@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="Tags"
-        app:navigationIcon="@drawable/ic_add"
+        app:navigationIcon="@drawable/ic_back"
         app:titleTextColor="@color/text_primary" />
 
     <ScrollView
