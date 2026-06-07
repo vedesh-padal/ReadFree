@@ -19,20 +19,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    // Freedium mirror base URL — swap this if the mirror goes down
-    private val FREEDIUM_BASE = "https://freedium-mirror.cfd/"
-
-    // Domains we know are Medium publications
-    private val MEDIUM_DOMAINS = setOf(
-        "medium.com",
-        "towardsdatascience.com",
-        "betterprogramming.pub",
-        "levelup.gitconnected.com",
-        "javascript.plainenglish.io",
-        "itnext.io",
-        "blog.bitsrc.io",
-        "hackernoon.com"
+    // Ordered list of Freedium-compatible mirrors to try on failure
+    private val MIRRORS = listOf(
+        "https://freedium.cfd/",
+        "https://www.freedium.cfd/",
+        "https://scribe.rip/"
     )
+    private var currentMirrorIndex = 0
+
+    // Tracks the original article URL so we can retry with a different mirror
+    private var currentArticleUrl: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +46,14 @@ class MainActivity : AppCompatActivity() {
                 loadArticle(pasted)
             } else {
                 Toast.makeText(this, "Paste a Medium link first", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Retry button: resets the mirror index and retries from the first mirror
+        binding.btnRetry.setOnClickListener {
+            if (currentArticleUrl.isNotEmpty()) {
+                currentMirrorIndex = 0
+                loadArticle(currentArticleUrl)
             }
         }
 
@@ -124,9 +128,10 @@ class MainActivity : AppCompatActivity() {
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    // Stay inside the app for freedium URLs, open external links in browser
                     val url = request?.url?.toString() ?: return false
-                    return if (url.contains("freedium") || isMediumDomain(url)) {
+                    // Allow any mirror URL or known medium domain to load inside the WebView
+                    val isMirror = MIRRORS.any { url.startsWith(it) }
+                    return if (isMirror || isMediumDomain(url)) {
                         false // let WebView handle it
                     } else {
                         openInBrowser(url)
@@ -145,12 +150,36 @@ class MainActivity : AppCompatActivity() {
                     url?.let { binding.urlBar.text = formatUrlForDisplay(it) }
                 }
 
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: android.webkit.WebResourceError?
+                ) {
+                    super.onReceivedError(view, request, error)
+                    // Only react to main-frame failures, not sub-resource errors (images, scripts)
+                    if (request?.isForMainFrame == true) {
+                        tryNextMirrorOrShowError()
+                    }
+                }
+
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: android.webkit.WebResourceResponse?
+                ) {
+                    super.onReceivedHttpError(view, request, errorResponse)
+                    val statusCode = errorResponse?.statusCode ?: return
+                    // Only failover on server-side errors (5xx), not client errors (4xx)
+                    if (request?.isForMainFrame == true && statusCode >= 500) {
+                        tryNextMirrorOrShowError()
+                    }
+                }
+
                 override fun onReceivedSslError(
                     view: WebView?,
                     handler: SslErrorHandler?,
                     error: android.net.http.SslError?
                 ) {
-                    // Hide the loading overlay — something went wrong
                     binding.loadingView.visibility = View.GONE
                     AlertDialog.Builder(this@MainActivity)
                         .setTitle("SSL Certificate Warning")
@@ -160,6 +189,27 @@ class MainActivity : AppCompatActivity() {
                         .show()
                 }
             }
+        }
+    }
+
+    /**
+     * Advances to the next mirror in the list and retries the current article.
+     * If all mirrors are exhausted, shows the error panel instead.
+     */
+    private fun tryNextMirrorOrShowError() {
+        binding.loadingView.visibility = View.GONE
+        val nextIndex = currentMirrorIndex + 1
+        if (nextIndex < MIRRORS.size && currentArticleUrl.isNotEmpty()) {
+            currentMirrorIndex = nextIndex
+            val nextMirrorUrl = MIRRORS[nextIndex] + currentArticleUrl
+            binding.errorView.visibility = View.GONE
+            binding.loadingView.visibility = View.VISIBLE
+            binding.webView.loadUrl(nextMirrorUrl)
+        } else {
+            // All mirrors exhausted — show the error panel
+            binding.errorView.visibility = View.VISIBLE
+            binding.errorText.text = "All mirrors failed to load this article."
+            binding.errorSubText.text = "Check your connection or try again later."
         }
     }
 
@@ -180,18 +230,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadArticle(originalUrl: String) {
         val cleanUrl = originalUrl.trim()
+        currentArticleUrl = cleanUrl  // store for mirror retry
+        currentMirrorIndex = 0        // always start from first mirror on a new load
+
         val freediumUrl = buildFreediumUrl(cleanUrl)
 
         binding.homeScreen.visibility = View.GONE
         binding.readerLayout.visibility = View.VISIBLE
+        binding.errorView.visibility = View.GONE
         binding.loadingView.visibility = View.VISIBLE
         binding.webView.loadUrl(freediumUrl)
     }
 
     private fun buildFreediumUrl(originalUrl: String): String {
-        // Already a freedium URL? Don't double-wrap
-        if (originalUrl.contains("freedium")) return originalUrl
-        return "$FREEDIUM_BASE$originalUrl"
+        // If already a mirror URL, don't double-wrap
+        if (MIRRORS.any { originalUrl.startsWith(it) }) return originalUrl
+        return "${MIRRORS[currentMirrorIndex]}$originalUrl"
     }
 
     private fun showHomeScreen() {
@@ -219,9 +273,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isMediumDomain(url: String): Boolean {
+        val knownMediumHosts = setOf(
+            "medium.com", "towardsdatascience.com", "betterprogramming.pub",
+            "levelup.gitconnected.com", "javascript.plainenglish.io",
+            "itnext.io", "blog.bitsrc.io", "hackernoon.com"
+        )
         return try {
             val host = Uri.parse(url).host ?: return false
-            MEDIUM_DOMAINS.any { host.endsWith(it) }
+            knownMediumHosts.any { host.endsWith(it) }
         } catch (e: Exception) {
             false
         }
