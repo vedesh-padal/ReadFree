@@ -87,14 +87,13 @@ class HomeViewModel(
         _searchQuery.value = query
     }
 
-    fun toggleReadState(
-        articleUrl: String,
-        currentState: ReadState,
-    ) {
+    fun toggleReadState(articleUrl: String, currentState: ReadState) {
         val newState = if (currentState == ReadState.READ) ReadState.UNREAD else ReadState.READ
-        viewModelScope.launch {
-            articleRepo.updateReadState(articleUrl, newState)
-        }
+        viewModelScope.launch { articleRepo.updateReadState(articleUrl, newState) }
+    }
+
+    fun setReadState(articleUrl: String, state: ReadState) {
+        viewModelScope.launch { articleRepo.updateReadState(articleUrl, state) }
     }
 
     fun deleteArticle(articleUrl: String) {

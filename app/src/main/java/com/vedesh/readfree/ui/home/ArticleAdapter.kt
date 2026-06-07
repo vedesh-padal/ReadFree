@@ -1,5 +1,8 @@
 package com.vedesh.readfree.ui.home
 
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,28 +16,21 @@ import com.vedesh.readfree.UrlUtils
 import com.vedesh.readfree.data.db.entity.ReadState
 import com.vedesh.readfree.data.model.ArticleWithTags
 import com.vedesh.readfree.databinding.ItemArticleCardBinding
+import java.util.concurrent.TimeUnit
 
 class ArticleAdapter(
     private val onClick: (ArticleWithTags) -> Unit,
     private val onLongClick: (ArticleWithTags) -> Unit,
 ) : ListAdapter<ArticleWithTags, ArticleAdapter.ViewHolder>(ArticleDiffCallback()) {
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int,
-    ): ViewHolder {
-        val binding =
-            ItemArticleCardBinding.inflate(
-                LayoutInflater.from(parent.context),
-                parent,
-                false,
-            )
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = ItemArticleCardBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false,
+        )
         return ViewHolder(binding, onClick, onLongClick)
     }
 
-    override fun onBindViewHolder(
-        holder: ViewHolder,
-        position: Int,
-    ) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
@@ -43,68 +39,134 @@ class ArticleAdapter(
         private val onClick: (ArticleWithTags) -> Unit,
         private val onLongClick: (ArticleWithTags) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
+
         fun bind(item: ArticleWithTags) {
             binding.root.setOnClickListener { onClick(item) }
-            binding.root.setOnLongClickListener {
-                onLongClick(item)
-                true
+            binding.root.setOnLongClickListener { onLongClick(item); true }
+
+            // --- Title ---
+            val title = item.article.title.ifEmpty { "Untitled Article" }
+            binding.tvTitle.text = title
+
+            // --- Read state visual ---
+            when (item.article.readState) {
+                ReadState.UNREAD -> {
+                    // Bold title, accent dot (full size)
+                    binding.tvTitle.setTypeface(null, Typeface.BOLD)
+                    binding.tvTitle.alpha = 1f
+                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                    binding.readStateIndicator.visibility = View.VISIBLE
+                    binding.readStateIndicator.backgroundTintList =
+                        ContextCompat.getColorStateList(binding.root.context, R.color.read_state_unread)
+                    val lp = binding.readStateIndicator.layoutParams
+                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_unread)
+                    lp.height = lp.width
+                    binding.readStateIndicator.layoutParams = lp
+                }
+                ReadState.READING -> {
+                    // Normal weight, smaller dot
+                    binding.tvTitle.setTypeface(null, Typeface.NORMAL)
+                    binding.tvTitle.alpha = 1f
+                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                    binding.readStateIndicator.visibility = View.VISIBLE
+                    binding.readStateIndicator.backgroundTintList =
+                        ContextCompat.getColorStateList(binding.root.context, R.color.read_state_reading)
+                    val lp = binding.readStateIndicator.layoutParams
+                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_reading)
+                    lp.height = lp.width
+                    binding.readStateIndicator.layoutParams = lp
+                }
+                ReadState.READ -> {
+                    // Dimmed, normal weight, checkmark replaces dot
+                    binding.tvTitle.setTypeface(null, Typeface.NORMAL)
+                    binding.tvTitle.alpha = 0.45f
+                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                    binding.readStateIndicator.visibility = View.VISIBLE
+                    binding.readStateIndicator.backgroundTintList =
+                        ContextCompat.getColorStateList(binding.root.context, R.color.read_state_read)
+                    val lp = binding.readStateIndicator.layoutParams
+                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_reading)
+                    lp.height = lp.width
+                    binding.readStateIndicator.layoutParams = lp
+                }
             }
 
-            binding.tvTitle.text = item.article.title.ifEmpty { "Untitled Article" }
-            binding.tvUrl.text = UrlUtils.formatUrlForDisplay(item.article.url)
+            // --- Meta: domain · time ago ---
+            val domain = try {
+                android.net.Uri.parse(item.article.url).host?.removePrefix("www.") ?: ""
+            } catch (e: Exception) {
+                UrlUtils.formatUrlForDisplay(item.article.url)
+            }
+            val timeAgo = formatTimeAgo(System.currentTimeMillis() - item.article.savedAt)
+            binding.tvMeta.text = if (domain.isNotEmpty()) "$domain · $timeAgo" else timeAgo
 
-            // Set Read State color
-            val colorRes =
-                when (item.article.readState) {
-                    ReadState.UNREAD -> R.color.read_state_unread
-                    ReadState.READING -> R.color.read_state_reading
-                    ReadState.READ -> R.color.read_state_read
+            // --- Offline badge ---
+            binding.ivOffline.visibility =
+                if (item.article.offlineFilePath != null) View.VISIBLE else View.GONE
+
+            // --- List chips ---
+            binding.chipGroupLists.removeAllViews()
+            if (item.lists.isNotEmpty()) {
+                item.lists.forEach { list ->
+                    val chip = Chip(binding.root.context).apply {
+                        text = "${list.emoji} ${list.name}"
+                        textSize = 9f
+                        isClickable = false
+                        chipMinHeight = 20f
+                        chipStartPadding = 4f
+                        chipEndPadding = 4f
+                        try {
+                            val color = Color.parseColor(list.colorHex)
+                            setChipBackgroundColorResource(android.R.color.transparent)
+                            chipStrokeWidth = 1f
+                            setChipStrokeColor(android.content.res.ColorStateList.valueOf(color))
+                            setTextColor(color)
+                        } catch (e: Exception) { /* fallback to default */ }
+                    }
+                    binding.chipGroupLists.addView(chip)
                 }
-            binding.readStateIndicator.backgroundTintList =
-                ContextCompat.getColorStateList(binding.root.context, colorRes)
+            }
 
-            // Formatted Date
-            val diff = System.currentTimeMillis() - item.article.savedAt
-            val days = (diff / (1000 * 60 * 60 * 24)).coerceAtLeast(0)
-            binding.tvDate.text = if (days == 0L) "Saved today" else "Saved $days days ago"
-
-            // Offline Indicator
-            binding.ivOffline.visibility = if (item.article.offlineFilePath != null) View.VISIBLE else View.GONE
-
-            // Tags
+            // --- Tag chips ---
             binding.chipGroupTags.removeAllViews()
             if (item.tags.isEmpty()) {
                 binding.tagsScrollView.visibility = View.GONE
             } else {
                 binding.tagsScrollView.visibility = View.VISIBLE
                 item.tags.forEach { tag ->
-                    val chip =
-                        Chip(binding.root.context).apply {
-                            text = tag.name
-                            textSize = 10f
-                            isClickable = false
-                            chipMinHeight = 24f
-                            ensureAccessibleTouchTarget(24)
-                        }
+                    val chip = Chip(binding.root.context).apply {
+                        text = "#${tag.name}"
+                        textSize = 9f
+                        isClickable = false
+                        chipMinHeight = 20f
+                        chipStartPadding = 4f
+                        chipEndPadding = 4f
+                    }
                     binding.chipGroupTags.addView(chip)
                 }
+            }
+        }
+
+        private fun formatTimeAgo(diffMs: Long): String {
+            val mins = TimeUnit.MILLISECONDS.toMinutes(diffMs)
+            val hours = TimeUnit.MILLISECONDS.toHours(diffMs)
+            val days = TimeUnit.MILLISECONDS.toDays(diffMs)
+            return when {
+                mins < 1 -> "just now"
+                hours < 1 -> "${mins}m ago"
+                hours < 24 -> "${hours}h ago"
+                days < 7 -> "${days}d ago"
+                days < 30 -> "${days / 7}w ago"
+                else -> "${days / 30}mo ago"
             }
         }
     }
 
     class ArticleDiffCallback : DiffUtil.ItemCallback<ArticleWithTags>() {
-        override fun areItemsTheSame(
-            oldItem: ArticleWithTags,
-            newItem: ArticleWithTags,
-        ): Boolean {
-            return oldItem.article.url == newItem.article.url
-        }
+        override fun areItemsTheSame(oldItem: ArticleWithTags, newItem: ArticleWithTags) =
+            oldItem.article.url == newItem.article.url
 
-        override fun areContentsTheSame(
-            oldItem: ArticleWithTags,
-            newItem: ArticleWithTags,
-        ): Boolean {
-            return oldItem == newItem
-        }
+        override fun areContentsTheSame(oldItem: ArticleWithTags, newItem: ArticleWithTags) =
+            oldItem == newItem
     }
 }

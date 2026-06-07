@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dot_unread">8dp</dimen>
+    <dimen name="dot_reading">5dp</dimen>
+    <dimen name="dot_read">5dp</dimen>
+</resources>

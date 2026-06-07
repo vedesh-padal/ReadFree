@@ -80,6 +80,10 @@ class HomeFragment : Fragment() {
         adapter =
             ArticleAdapter(
                 onClick = { articleWithTags ->
+                    // Spec: opened from library → UNREAD becomes READING
+                    if (articleWithTags.article.readState == ReadState.UNREAD) {
+                        viewModel.setReadState(articleWithTags.article.url, ReadState.READING)
+                    }
                     val intent = Intent(requireContext(), ReaderActivity::class.java)
                     intent.putExtra("url", articleWithTags.article.url)
                     startActivity(intent)
@@ -88,8 +92,8 @@ class HomeFragment : Fragment() {
                     showArticleContextSheet(articleWithTags)
                 },
             )
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         val swipeHandler =
             object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {

@@ -80,7 +80,7 @@
                     android:id="@+id/btnSearchBack"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:src="@android:drawable/ic_media_previous"
+                    android:src="@drawable/ic_back"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     app:tint="@color/text_secondary" />
 
