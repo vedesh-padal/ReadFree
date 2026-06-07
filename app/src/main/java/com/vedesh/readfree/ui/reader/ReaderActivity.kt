@@ -46,6 +46,8 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     private var saveSheet: BottomSheetDialog? = null
     private var saveBinding: BottomSheetSaveBinding? = null
 
+    private var suppressBanner = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityReaderBinding.inflate(layoutInflater)
@@ -59,11 +61,9 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         binding.btnOffline.setOnClickListener {
             saveOffline()
         }
-        binding.btnSettings.setOnClickListener {
-            showSettingsSheet()
-        }
         binding.btnErrorSettings.setOnClickListener {
-            showSettingsSheet()
+            // Can open an intent to Home or leave as a toast
+            android.widget.Toast.makeText(this, "Please configure mirror in Home Settings", android.widget.Toast.LENGTH_SHORT).show()
         }
 
         binding.btnRetry.setOnClickListener {
@@ -319,7 +319,11 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             if (article == null) {
                 runOnUiThread { showSaveBanner(isSaved = false) }
             } else {
-                runOnUiThread { showSaveBanner(isSaved = true) }
+                if (suppressBanner) {
+                    suppressBanner = false
+                } else {
+                    runOnUiThread { showSaveBanner(isSaved = true) }
+                }
             }
         }
     }
@@ -435,10 +439,12 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         }
 
         saveBinding?.btnSaveAndClose?.setOnClickListener {
-            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl))
-            saveSheet?.dismiss()
-            Toast.makeText(this, if (isEditMode) "Updated library" else "Saved to library", Toast.LENGTH_SHORT).show()
-            finish()
+            lifecycleScope.launch {
+                viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, selectedTags.toList(), UrlUtils.isMediumDomain(currentArticleUrl)).join()
+                saveSheet?.dismiss()
+                Toast.makeText(this@ReaderActivity, if (isEditMode) "Updated library" else "Saved to library", Toast.LENGTH_SHORT).show()
+                finish()
+            }
         }
 
         saveBinding?.btnReadNow?.setOnClickListener {
@@ -482,6 +488,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                         viewModel.updateOfflinePath(currentArticleUrl, savedPath)
                     } else {
                         val title = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Untitled Article"
+                        suppressBanner = true
                         viewModel.saveArticle(currentArticleUrl, title, null, emptyList(), UrlUtils.isMediumDomain(currentArticleUrl))
                         viewModel.updateOfflinePath(currentArticleUrl, savedPath)
                     }

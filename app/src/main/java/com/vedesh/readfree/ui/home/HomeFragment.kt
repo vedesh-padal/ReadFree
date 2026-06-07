@@ -62,6 +62,14 @@ class HomeFragment : Fragment() {
         setupSearchAndFilters()
         observeViewModel()
 
+        findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("selectedListId")?.observe(viewLifecycleOwner) { listId ->
+            if (listId != null) {
+                binding.chipGroupFilters.clearCheck()
+                viewModel.setFilter(HomeViewModel.FilterType.LIST, listId = listId)
+                findNavController().currentBackStackEntry?.savedStateHandle?.remove<Long>("selectedListId")
+            }
+        }
+
         binding.btnHomeSettings.setOnClickListener {
             showSettingsSheet()
         }

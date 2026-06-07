@@ -55,8 +55,7 @@ class ListsFragment : Fragment() {
         
         adapter = ListAdapterImpl(
             onItemClick = { listWithCount ->
-                // To be implemented: filter home fragment by list
-                // For now just navigate up
+                findNavController().previousBackStackEntry?.savedStateHandle?.set("selectedListId", listWithCount.list.id)
                 findNavController().navigateUp()
             }
         )

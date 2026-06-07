@@ -28,8 +28,7 @@ class ReaderViewModel(
         }
     }
 
-    fun saveArticle(url: String, title: String, listId: Long?, tags: List<String>, isMediumUrl: Boolean) {
-        viewModelScope.launch {
+    fun saveArticle(url: String, title: String, listId: Long?, tags: List<String>, isMediumUrl: Boolean) = viewModelScope.launch {
             if (!articleRepo.exists(url)) {
                 articleRepo.insert(
                     Article(

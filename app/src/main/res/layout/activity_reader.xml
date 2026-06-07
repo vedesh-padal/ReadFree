@@ -21,7 +21,7 @@
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_previous"
+            android:src="@drawable/ic_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="@color/text_primary"
             android:contentDescription="Back" />
@@ -59,15 +59,7 @@
             android:contentDescription="Save Offline"
             android:layout_marginStart="4dp" />
 
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_settings"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/text_secondary"
-            android:contentDescription="Settings"
-            android:layout_marginStart="4dp" />
+
 
     </LinearLayout>
 
