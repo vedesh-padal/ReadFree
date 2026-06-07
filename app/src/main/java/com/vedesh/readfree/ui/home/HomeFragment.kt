@@ -30,6 +30,7 @@ import com.vedesh.readfree.databinding.FragmentHomeBinding
 import com.vedesh.readfree.ui.ViewModelFactory
 import com.vedesh.readfree.ui.reader.ReaderActivity
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
@@ -212,9 +213,21 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.articles.collectLatest { articles ->
+                    combine(
+                        viewModel.articles,
+                        viewModel.searchQuery,
+                    ) { articles, query -> articles to query }.collectLatest { (articles, query) ->
                         adapter.submitList(articles)
-                        binding.tvEmptyState.visibility = if (articles.isEmpty()) View.VISIBLE else View.GONE
+                        if (articles.isEmpty()) {
+                            if (query.isNotEmpty()) {
+                                binding.tvEmptyState.text = "No articles match \"$query\""
+                            } else {
+                                binding.tvEmptyState.text = "Library is empty.\nPaste a URL to save!"
+                            }
+                            binding.tvEmptyState.visibility = View.VISIBLE
+                        } else {
+                            binding.tvEmptyState.visibility = View.GONE
+                        }
                     }
                 }
             }
