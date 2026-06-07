@@ -163,12 +163,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadArticle(originalUrl: String) {
         val cleanUrl = originalUrl.trim()
-
-        if (!isMediumDomain(cleanUrl) && !cleanUrl.contains("medium.com")) {
-            // Not a Medium article — show message and offer to open anyway
-            Toast.makeText(this, "Not a Medium link. Opening anyway…", Toast.LENGTH_SHORT).show()
-        }
-
         val freediumUrl = buildFreediumUrl(cleanUrl)
 
         binding.homeScreen.visibility = View.GONE
