@@ -1,7 +1,6 @@
 package com.vedesh.readfree
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -22,20 +21,7 @@ import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var prefs: SharedPreferences
-
-    companion object {
-        private const val PREFS_NAME = "readfree_prefs"
-        private const val PREF_MIRROR_URL = "mirror_url"
-    }
-
-    // Built-in fallback mirrors tried in order when the active mirror fails
-    private val MIRRORS = listOf(
-        "https://freedium.cfd/",
-        "https://www.freedium.cfd/",
-        "https://scribe.rip/"
-    )
-    private var currentMirrorIndex = 0
+    private lateinit var mirrors: MirrorRepository
 
     // Tracks the original article URL so we can retry with a different mirror
     private var currentArticleUrl: String = ""
@@ -44,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        mirrors = MirrorRepository(this)
 
         setupWebView()
         setupToolbar()
@@ -60,10 +46,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Retry button: resets the mirror index and retries from the first mirror
+        // Retry button: resets failover index and reloads from mirror 0
         binding.btnRetry.setOnClickListener {
             if (currentArticleUrl.isNotEmpty()) {
-                currentMirrorIndex = 0
+                mirrors.resetMirrorIndex()
                 loadArticle(currentArticleUrl)
             }
         }
@@ -72,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
     }
 
+    // ── Navigation ────────────────────────────────────────────────────────────
+
     private fun setupBackNavigation() {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -79,7 +67,6 @@ class MainActivity : AppCompatActivity() {
                     binding.webView.canGoBack() -> binding.webView.goBack()
                     binding.readerLayout.visibility == View.VISIBLE -> showHomeScreen()
                     else -> {
-                        // Disable this callback and let system handle back (e.g. finish activity)
                         isEnabled = false
                         onBackPressedDispatcher.onBackPressed()
                         isEnabled = true
@@ -101,25 +88,19 @@ class MainActivity : AppCompatActivity() {
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
                 val url = UrlUtils.extractUrl(sharedText)
-                if (url != null) {
-                    loadArticle(url)
-                } else {
-                    showHomeScreen()
-                }
+                if (url != null) loadArticle(url) else showHomeScreen()
             }
             // Tapped a medium.com link directly
             Intent.ACTION_VIEW -> {
                 val url = intent.data?.toString()
-                if (url != null) {
-                    loadArticle(url)
-                } else {
-                    showHomeScreen()
-                }
+                if (url != null) loadArticle(url) else showHomeScreen()
             }
             // Opened from launcher with no link
             else -> showHomeScreen()
         }
     }
+
+    // ── WebView setup ─────────────────────────────────────────────────────────
 
     private fun setupWebView() {
         binding.webView.apply {
@@ -140,10 +121,11 @@ class MainActivity : AppCompatActivity() {
                     request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: return false
-                    // Allow any mirror URL or known medium domain to load inside the WebView
-                    val isMirror = MIRRORS.any { url.startsWith(it) }
+                    // Allow mirror URLs and known Medium domains inside the WebView;
+                    // everything else opens in the external browser.
+                    val isMirror = mirrors.builtInMirrors.any { url.startsWith(it) }
                     return if (isMirror || UrlUtils.isMediumDomain(url)) {
-                        false // let WebView handle it
+                        false
                     } else {
                         openInBrowser(url)
                         true
@@ -168,9 +150,7 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     super.onReceivedError(view, request, error)
                     // Only react to main-frame failures, not sub-resource errors (images, scripts)
-                    if (request?.isForMainFrame == true) {
-                        tryNextMirrorOrShowError()
-                    }
+                    if (request?.isForMainFrame == true) tryNextMirrorOrShowError()
                 }
 
                 override fun onReceivedHttpError(
@@ -181,9 +161,7 @@ class MainActivity : AppCompatActivity() {
                     super.onReceivedHttpError(view, request, errorResponse)
                     val statusCode = errorResponse?.statusCode ?: return
                     // Only failover on server-side errors (5xx), not client errors (4xx)
-                    if (request?.isForMainFrame == true && statusCode >= 500) {
-                        tryNextMirrorOrShowError()
-                    }
+                    if (request?.isForMainFrame == true && statusCode >= 500) tryNextMirrorOrShowError()
                 }
 
                 override fun onReceivedSslError(
@@ -203,52 +181,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ── Mirror failover ───────────────────────────────────────────────────────
+
     /**
-     * Advances to the next mirror in the list and retries the current article.
-     * If all mirrors are exhausted, shows the error panel instead.
+     * Asks [MirrorRepository] to advance to the next mirror and retries loading.
+     * If all mirrors are exhausted, shows the error panel.
      */
     private fun tryNextMirrorOrShowError() {
         binding.loadingView.visibility = View.GONE
-        val nextIndex = currentMirrorIndex + 1
-        if (nextIndex < MIRRORS.size && currentArticleUrl.isNotEmpty()) {
-            currentMirrorIndex = nextIndex
-            val nextMirrorUrl = MIRRORS[nextIndex] + currentArticleUrl
+        if (mirrors.tryNextMirror() && currentArticleUrl.isNotEmpty()) {
             binding.errorView.visibility = View.GONE
             binding.loadingView.visibility = View.VISIBLE
-            binding.webView.loadUrl(nextMirrorUrl)
+            binding.webView.loadUrl(mirrors.currentMirrorUrl(currentArticleUrl))
         } else {
-            // All mirrors exhausted — show the error panel
             binding.errorView.visibility = View.VISIBLE
             binding.errorText.text = "All mirrors failed to load this article."
             binding.errorSubText.text = "Check your connection or try again later."
         }
     }
 
+    // ── Toolbar ───────────────────────────────────────────────────────────────
+
     private fun setupToolbar() {
         binding.btnOpenBrowser.setOnClickListener {
-            val currentUrl = binding.webView.url
-            if (currentUrl != null) {
-                openInBrowser(currentUrl)
-            }
+            binding.webView.url?.let { openInBrowser(it) }
         }
-
         binding.btnBack.setOnClickListener {
-            if (binding.webView.canGoBack()) {
-                binding.webView.goBack()
-            }
+            if (binding.webView.canGoBack()) binding.webView.goBack()
         }
-
         binding.btnSettings.setOnClickListener {
             showSettingsSheet()
         }
-    }
-
-    /**
-     * Returns the active mirror base URL.
-     * User-saved custom URL takes priority; falls back to the first built-in mirror.
-     */
-    private fun getMirrorBaseUrl(): String {
-        return prefs.getString(PREF_MIRROR_URL, MIRRORS[0]) ?: MIRRORS[0]
     }
 
     private fun showSettingsSheet() {
@@ -256,7 +219,7 @@ class MainActivity : AppCompatActivity() {
         val sheetBinding = BottomSheetSettingsBinding.inflate(layoutInflater)
         sheet.setContentView(sheetBinding.root)
 
-        val currentMirror = getMirrorBaseUrl()
+        val currentMirror = mirrors.getActiveMirror()
 
         // Pre-select the matching preset radio, or fall back to Custom
         val presetRadios = listOf(
@@ -273,7 +236,7 @@ class MainActivity : AppCompatActivity() {
             sheetBinding.etCustomMirrorUrl.setText(currentMirror)
         }
 
-        // Show/hide custom input based on selection
+        // Show/hide custom URL input based on radio selection
         sheetBinding.radioGroupMirrors.setOnCheckedChangeListener { _, checkedId ->
             sheetBinding.customUrlLayout.visibility =
                 if (checkedId == sheetBinding.radioMirrorCustom.id) View.VISIBLE else View.GONE
@@ -289,19 +252,18 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Enter a mirror URL first", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                // Ensure it ends with a slash
                 if (custom.endsWith("/")) custom else "$custom/"
             } else {
-                selected?.tag as? String ?: MIRRORS[0]
+                selected?.tag as? String ?: mirrors.builtInMirrors[0]
             }
 
-            prefs.edit().putString(PREF_MIRROR_URL, newUrl).apply()
+            mirrors.saveUserMirror(newUrl)
             sheet.dismiss()
             Toast.makeText(this, "Mirror set to: $newUrl", Toast.LENGTH_SHORT).show()
 
-            // If reader is open, reload the current article with the new mirror
+            // Reload the current article with the new mirror if reader is open
             if (currentArticleUrl.isNotEmpty() && binding.readerLayout.visibility == View.VISIBLE) {
-                currentMirrorIndex = 0
+                mirrors.resetMirrorIndex()
                 loadArticle(currentArticleUrl)
             }
         }
@@ -309,26 +271,18 @@ class MainActivity : AppCompatActivity() {
         sheet.show()
     }
 
+    // ── Article loading ───────────────────────────────────────────────────────
+
     private fun loadArticle(originalUrl: String) {
         val cleanUrl = originalUrl.trim()
-        currentArticleUrl = cleanUrl  // store for mirror retry
-        currentMirrorIndex = 0        // always start from first mirror on a new load
-
-        val freediumUrl = buildFreediumUrl(cleanUrl)
+        currentArticleUrl = cleanUrl
+        mirrors.resetMirrorIndex()
 
         binding.homeScreen.visibility = View.GONE
         binding.readerLayout.visibility = View.VISIBLE
         binding.errorView.visibility = View.GONE
         binding.loadingView.visibility = View.VISIBLE
-        binding.webView.loadUrl(freediumUrl)
-    }
-
-    private fun buildFreediumUrl(originalUrl: String): String {
-        // If already a known mirror URL, don't double-wrap
-        if (MIRRORS.any { originalUrl.startsWith(it) }) return originalUrl
-        // Use user-chosen mirror first, fall back to indexed mirror during failover
-        val base = if (currentMirrorIndex == 0) getMirrorBaseUrl() else MIRRORS[currentMirrorIndex]
-        return "$base$originalUrl"
+        binding.webView.loadUrl(mirrors.buildProxyUrl(cleanUrl))
     }
 
     private fun showHomeScreen() {
@@ -336,17 +290,16 @@ class MainActivity : AppCompatActivity() {
         binding.readerLayout.visibility = View.GONE
     }
 
+    // ── External browser ──────────────────────────────────────────────────────
+
     private fun openInBrowser(url: String) {
         try {
-            // Try Chrome Custom Tab first (stays branded)
-            val customTabIntent = CustomTabsIntent.Builder()
+            CustomTabsIntent.Builder()
                 .setShowTitle(true)
                 .build()
-            customTabIntent.launchUrl(this, Uri.parse(url))
+                .launchUrl(this, Uri.parse(url))
         } catch (e: Exception) {
-            // Fall back to default browser
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
     }
-
 }
