@@ -51,4 +51,23 @@ class ReaderViewModel(
             }
         }
     }
+
+    fun getArticle(url: String, callback: (Article?) -> Unit) {
+        viewModelScope.launch {
+            callback(articleRepo.getByUrl(url))
+        }
+    }
+
+    fun updateScrollProgress(url: String, scrollY: Int, percentage: Float) {
+        viewModelScope.launch {
+            articleRepo.getByUrl(url)?.let { article ->
+                val newProgress = scrollY
+                val newState = if (percentage > 90f) com.vedesh.readfree.data.db.entity.ReadState.READ else article.readState
+                
+                if (article.scrollProgress != newProgress || article.readState != newState) {
+                    articleRepo.update(article.copy(scrollProgress = newProgress, readState = newState))
+                }
+            }
+        }
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.webkit.JavascriptInterface
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -106,7 +107,19 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 displayZoomControls = false
                 cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             }
+            addJavascriptInterface(ReadFreeJSInterface(), "AndroidJS")
             webViewClient = ReadFreeWebViewClient(mirrors, this@ReaderActivity)
+        }
+    }
+
+    private inner class ReadFreeJSInterface {
+        @JavascriptInterface
+        fun onScrollProgress(scrollY: Int, percentage: Float) {
+            // Debounce or directly save; for simplicity, we directly save since room is fast enough,
+            // but in a real app, we might debounce.
+            if (currentArticleUrl.isNotEmpty()) {
+                viewModel.updateScrollProgress(currentArticleUrl, scrollY, percentage)
+            }
         }
     }
 
@@ -119,13 +132,36 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         if (url != null) {
             binding.urlBar.text = UrlUtils.formatUrlForDisplay(url)
             
-            // Try to extract title from webview
-            binding.webView.evaluateJavascript("(function() { return document.title; })();") { titleRaw ->
+            // Extract title and set up scroll tracking
+            binding.webView.evaluateJavascript("""
+                (function() {
+                    let debounceTimer;
+                    window.addEventListener('scroll', function() {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(function() {
+                            var maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+                            var currentScroll = window.scrollY;
+                            var percentage = maxScroll > 0 ? (currentScroll / maxScroll) * 100 : 0;
+                            AndroidJS.onScrollProgress(Math.round(currentScroll), percentage);
+                        }, 500); // 500ms debounce
+                    });
+                    return document.title;
+                })();
+            """.trimIndent()) { titleRaw ->
                 val title = titleRaw?.removeSurrounding("\"")?.trim() ?: "Untitled"
                 viewModel.updateTitle(currentArticleUrl, title)
-                
-                // If save sheet is currently showing, update its title
                 saveBinding?.tvSaveTitle?.text = title
+            }
+
+            // Restore previous scroll position
+            viewModel.getArticle(currentArticleUrl) { article ->
+                article?.scrollProgress?.let { scrollY ->
+                    if (scrollY > 0) {
+                        binding.webView.post {
+                            binding.webView.evaluateJavascript("window.scrollTo(0, $scrollY);", null)
+                        }
+                    }
+                }
             }
         }
     }
