@@ -130,4 +130,17 @@ class HomeViewModel(
             )
         }
     }
+
+    // Called from the Move to List dialog: syncs list assignments based on checkbox state
+    fun updateArticleLists(articleUrl: String, listIds: List<Long>, checked: BooleanArray) {
+        viewModelScope.launch {
+            listIds.forEachIndexed { index, listId ->
+                if (checked[index]) {
+                    listRepo.addArticleToList(articleUrl, listId)
+                } else {
+                    listRepo.removeArticleFromList(articleUrl, listId)
+                }
+            }
+        }
+    }
 }

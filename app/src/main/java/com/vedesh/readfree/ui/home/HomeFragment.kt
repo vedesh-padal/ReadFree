@@ -230,6 +230,9 @@ class HomeFragment : Fragment() {
 
         view.findViewById<View>(R.id.btnContextOpen).setOnClickListener {
             sheet.dismiss()
+            if (item.article.readState == ReadState.UNREAD) {
+                viewModel.setReadState(item.article.url, ReadState.READING)
+            }
             val intent = Intent(requireContext(), ReaderActivity::class.java)
             intent.putExtra("url", item.article.url)
             startActivity(intent)
@@ -237,9 +240,7 @@ class HomeFragment : Fragment() {
 
         view.findViewById<View>(R.id.btnContextEdit).setOnClickListener {
             sheet.dismiss()
-            // In a full implementation, this opens SaveBottomSheet from HomeFragment.
-            // For now, we can show a Toast.
-            Toast.makeText(requireContext(), "Edit List & Tags via ReaderActivity right now.", Toast.LENGTH_SHORT).show()
+            showMoveToListDialog(item)
         }
 
         view.findViewById<View>(R.id.btnContextRaindrop).setOnClickListener {
@@ -259,16 +260,15 @@ class HomeFragment : Fragment() {
 
         view.findViewById<View>(R.id.btnContextShare).setOnClickListener {
             sheet.dismiss()
-            val intent =
-                Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, item.article.url)
-                }
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, item.article.url)
+            }
             startActivity(Intent.createChooser(intent, "Share via"))
         }
 
         val btnMarkRead = view.findViewById<android.widget.Button>(R.id.btnContextMarkRead)
-        btnMarkRead.text = if (item.article.readState == ReadState.READ) "Mark as Unread" else "✓ Mark as Read"
+        btnMarkRead.text = if (item.article.readState == ReadState.READ) "↩ Mark as Unread" else "✓ Mark as Read"
         btnMarkRead.setOnClickListener {
             sheet.dismiss()
             viewModel.toggleReadState(item.article.url, item.article.readState)
@@ -277,9 +277,35 @@ class HomeFragment : Fragment() {
         view.findViewById<View>(R.id.btnContextDelete).setOnClickListener {
             sheet.dismiss()
             viewModel.deleteArticle(item.article.url)
+            com.google.android.material.snackbar.Snackbar
+                .make(binding.root, "Removed from library", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                .setAction("Undo") { viewModel.restoreArticle(item) }
+                .show()
         }
 
         sheet.show()
+    }
+
+    private fun showMoveToListDialog(item: ArticleWithTags) {
+        val allLists = viewModel.lists.value
+        if (allLists.isEmpty()) {
+            Toast.makeText(requireContext(), "No lists yet. Create one from the Lists screen.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val listNames = allLists.map { "${it.list.emoji} ${it.list.name}" }.toTypedArray()
+        val currentListIds = item.lists.map { it.id }.toSet()
+        val checked = BooleanArray(allLists.size) { allLists[it].list.id in currentListIds }
+
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Move to List")
+            .setMultiChoiceItems(listNames, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton("Save") { _, _ ->
+                viewModel.updateArticleLists(item.article.url, allLists.map { it.list.id }, checked)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showSettingsSheet() {
