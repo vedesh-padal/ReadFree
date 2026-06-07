@@ -4,11 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -134,19 +132,15 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    binding.loadingView.visibility = View.VISIBLE
+                }
+
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    binding.progressBar.visibility = View.GONE
-                    // Show toolbar with current URL for reference
+                    binding.loadingView.visibility = View.GONE
                     url?.let { binding.urlBar.text = formatUrlForDisplay(it) }
-                }
-            }
-
-            webChromeClient = object : WebChromeClient() {
-                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                    binding.progressBar.progress = newProgress
-                    binding.progressBar.visibility =
-                        if (newProgress < 100) View.VISIBLE else View.GONE
                 }
             }
         }
@@ -179,7 +173,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.homeScreen.visibility = View.GONE
         binding.readerLayout.visibility = View.VISIBLE
-        binding.progressBar.visibility = View.VISIBLE
+        binding.loadingView.visibility = View.VISIBLE
         binding.webView.loadUrl(freediumUrl)
     }
 
