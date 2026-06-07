@@ -62,9 +62,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         setupToolbar()
         setupBackNavigation()
 
-        binding.btnOffline.setOnClickListener {
-            saveOffline()
-        }
         binding.btnErrorSettings.setOnClickListener {
             android.widget.Toast.makeText(this, "Please configure mirror in Home Settings", android.widget.Toast.LENGTH_SHORT).show()
         }
@@ -407,9 +404,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     }
 
     private fun setupToolbar() {
-        binding.btnOpenBrowser.setOnClickListener {
-            binding.webView.url?.let { openInBrowser(it) }
-        }
         binding.btnBack.setOnClickListener {
             if (binding.webView.canGoBack()) {
                 binding.webView.goBack()
@@ -484,14 +478,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             val offlinePath = article?.offlineFilePath
 
             runOnUiThread {
-                if (offlinePath != null && java.io.File(offlinePath).exists()) {
-                    binding.btnOffline.isEnabled = false
-                    binding.btnOffline.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY)
-                } else {
-                    binding.btnOffline.isEnabled = true
-                    binding.btnOffline.imageTintList = android.content.res.ColorStateList.valueOf(resources.getColor(R.color.text_primary, null))
-                }
-
                 if (isOffline() && offlinePath != null && java.io.File(offlinePath).exists()) {
                     binding.loadingText.text = "Loading offline version…"
                     binding.webView.loadUrl("file://$offlinePath")
@@ -631,6 +617,9 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                         )
                     saveBinding?.etAddTag?.setAdapter(tagAdapter)
                     saveBinding?.etAddTag?.threshold = 1
+                    // Allow dropdown to overlay the bottom sheet
+                    saveBinding?.etAddTag?.dropDownAnchor = View.NO_ID
+                    saveBinding?.etAddTag?.dropDownHeight = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
                 }
             }
         }

@@ -38,27 +38,6 @@
             android:ellipsize="middle"
             android:text="Loading…" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnOpenBrowser"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Browser"
-            android:textSize="11sp"
-            android:paddingHorizontal="12dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:strokeColor="@color/accent"
-            android:textColor="@color/accent" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btnOffline"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_download"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/text_primary"
-            android:contentDescription="Save Offline"
-            android:layout_marginStart="4dp" />
-
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnReaderMore"
             android:layout_width="40dp"

@@ -7,39 +7,53 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="6dp"
     app:cardBackgroundColor="@color/bg_secondary"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
     app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <!-- Read state indicator dot/check (left gutter) -->
+        <!-- Left: read state indicator (thin vertical bar) -->
         <View
             android:id="@+id/readStateIndicator"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
+            android:layout_width="3dp"
+            android:layout_height="0dp"
             android:background="@drawable/shape_circle_accent"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="10dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvTitle"
-            app:layout_constraintBottom_toBottomOf="@id/tvTitle" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <ImageView
             android:id="@+id/ivReadCheck"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:src="@drawable/ic_check"
             android:visibility="gone"
-            android:layout_marginEnd="8dp"
+            android:scaleType="center"
+            android:layout_marginEnd="10dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvTitle"
             app:layout_constraintBottom_toBottomOf="@id/tvTitle"
             tools:visibility="visible" />
 
-        <!-- Article title (bold = UNREAD, normal = READING, dimmed = READ) -->
+        <!-- Offline badge -->
+        <ImageView
+            android:id="@+id/ivOffline"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_download"
+            android:visibility="gone"
+            app:tint="@color/text_tertiary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvMeta"
+            app:layout_constraintBottom_toBottomOf="@id/tvMeta"
+            tools:visibility="visible" />
+
+        <!-- Article title -->
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
@@ -52,7 +66,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/readStateIndicator"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Understanding DeepSeek Architecture for Advanced NLP" />
+            tools:text="Understanding DeepSeek Architecture" />
 
         <!-- Source URL + time -->
         <TextView
@@ -64,55 +78,42 @@
             android:maxLines="1"
             android:textColor="@color/text_secondary"
             android:textSize="11sp"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/ivOffline"
             app:layout_constraintStart_toStartOf="@id/tvTitle"
             app:layout_constraintTop_toBottomOf="@id/tvTitle"
             tools:text="towardsdatascience.com · 2h ago" />
 
-        <!-- List pills row -->
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupLists"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:chipSpacingHorizontal="4dp"
-            app:singleLine="true"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/tvTitle"
-            app:layout_constraintTop_toBottomOf="@id/tvMeta"
-            tools:visibility="visible" />
-
-        <!-- Tag chips row -->
+        <!-- Tags chip row -->
         <HorizontalScrollView
             android:id="@+id/tagsScrollView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/tvTitle"
-            app:layout_constraintTop_toBottomOf="@id/chipGroupLists">
+            app:layout_constraintTop_toBottomOf="@id/tvMeta">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupTags"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="4dp"
                 app:singleLine="true" />
         </HorizontalScrollView>
 
-        <!-- Offline badge icon next to metadata -->
-        <ImageView
-            android:id="@+id/ivOffline"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginStart="6dp"
-            android:src="@drawable/ic_download"
+        <!-- List chips (hidden by default) -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupLists"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:chipSpacingHorizontal="4dp"
+            app:singleLine="true"
             android:visibility="gone"
-            app:tint="@color/text_tertiary"
-            app:layout_constraintBottom_toBottomOf="@id/tvMeta"
-            app:layout_constraintStart_toEndOf="@id/tvMeta"
-            app:layout_constraintTop_toTopOf="@id/tvMeta"
-            tools:visibility="visible" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tvTitle"
+            app:layout_constraintTop_toBottomOf="@id/tagsScrollView" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

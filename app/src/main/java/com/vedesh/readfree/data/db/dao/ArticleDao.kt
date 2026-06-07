@@ -62,13 +62,14 @@ interface ArticleDao {
     )
     fun getByTag(tagName: String): Flow<List<ArticleWithTags>>
 
-    // Metadata search: title LIKE query OR has matching tag
+    // Metadata search: title, URL, tag name LIKE query
     @Transaction
     @Query(
         """
         SELECT DISTINCT a.* FROM articles a
         LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
         WHERE a.title LIKE '%' || :query || '%'
+           OR a.url LIKE '%' || :query || '%'
            OR t.tagName LIKE '%' || :query || '%'
         ORDER BY a.savedAt DESC
     """,
@@ -83,7 +84,7 @@ interface ArticleDao {
         INNER JOIN article_list_xref x ON a.url = x.articleUrl
         LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
         WHERE x.listId = :listId
-          AND (a.title LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
+          AND (a.title LIKE '%' || :query || '%' OR a.url LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
         ORDER BY x.addedAt DESC
     """,
     )
@@ -98,7 +99,7 @@ interface ArticleDao {
         SELECT DISTINCT a.* FROM articles a
         LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
         WHERE a.url NOT IN (SELECT articleUrl FROM article_list_xref)
-          AND (a.title LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
+          AND (a.title LIKE '%' || :query || '%' OR a.url LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
         ORDER BY a.savedAt DESC
     """,
     )
@@ -110,7 +111,7 @@ interface ArticleDao {
         SELECT DISTINCT a.* FROM articles a
         LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
         WHERE a.offlineFilePath IS NOT NULL
-          AND (a.title LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
+          AND (a.title LIKE '%' || :query || '%' OR a.url LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
         ORDER BY a.savedAt DESC
     """,
     )
