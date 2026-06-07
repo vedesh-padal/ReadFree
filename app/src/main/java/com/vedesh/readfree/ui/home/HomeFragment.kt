@@ -76,11 +76,9 @@ class HomeFragment : Fragment() {
 
         binding.fabAdd.setOnClickListener {
             // Focus on Paste input and open keyboard
-            binding.toolbar.visibility = View.GONE
-            binding.searchLayout.visibility = View.VISIBLE
-            binding.etSearch.requestFocus()
+            binding.etPasteUrl.requestFocus()
             val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-            imm.showSoftInput(binding.etSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            imm.showSoftInput(binding.etPasteUrl, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
     }
 
@@ -374,25 +372,46 @@ class HomeFragment : Fragment() {
         sheetBinding.etRaindropToken.setText(app.settingsRepository.getRaindropToken() ?: "")
         sheetBinding.switchRaindropSync.isChecked = app.settingsRepository.isRaindropSyncEnabled()
 
-        // Offline Storage section
-        val offlineDir = java.io.File(requireContext().filesDir, "offline")
-        val sizeBytes = if (offlineDir.exists()) {
-            offlineDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+        if (app.settingsRepository.getRaindropSaveMode() == "API") {
+            sheetBinding.radioGroupRaindropMode.check(R.id.radioRaindropApi)
         } else {
-            0L
+            sheetBinding.radioGroupRaindropMode.check(R.id.radioRaindropIntent)
         }
-        val sizeMb = String.format("%.2f MB", sizeBytes / (1024f * 1024f))
-        sheetBinding.tvOfflineStorageUsed.text = "Used: $sizeMb"
+
+        // Offline Storage section
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val offlineDir = java.io.File(requireContext().filesDir, "offline")
+                val sizeBytes = if (offlineDir.exists()) {
+                    offlineDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                } else {
+                    0L
+                }
+                val sizeMb = String.format("%.2f MB", sizeBytes / (1024f * 1024f))
+                
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    sheetBinding.tvOfflineStorageUsed.text = "Used: $sizeMb"
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    sheetBinding.tvOfflineStorageUsed.text = "Used: 0.00 MB"
+                }
+            }
+        }
 
         sheetBinding.btnClearOffline.setOnClickListener {
-            if (offlineDir.exists()) {
-                offlineDir.deleteRecursively()
-            }
-            lifecycleScope.launch {
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val offlineDir = java.io.File(requireContext().filesDir, "offline")
+                if (offlineDir.exists()) {
+                    offlineDir.deleteRecursively()
+                }
                 app.articleRepository.clearAllOfflinePaths()
+                
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    sheetBinding.tvOfflineStorageUsed.text = "Used: 0.00 MB"
+                    Toast.makeText(requireContext(), "Offline files cleared", Toast.LENGTH_SHORT).show()
+                }
             }
-            sheetBinding.tvOfflineStorageUsed.text = "Used: 0.00 MB"
-            Toast.makeText(requireContext(), "Offline files cleared", Toast.LENGTH_SHORT).show()
         }
 
         sheetBinding.btnApplyMirror.setOnClickListener {
@@ -416,9 +435,14 @@ class HomeFragment : Fragment() {
             // Save Raindrop Settings
             app.settingsRepository.saveRaindropToken(sheetBinding.etRaindropToken.text.toString())
             app.settingsRepository.setRaindropSyncEnabled(sheetBinding.switchRaindropSync.isChecked)
+            
+            val raindropModeRb = sheetBinding.root.findViewById<RadioButton>(
+                sheetBinding.radioGroupRaindropMode.checkedRadioButtonId
+            )
+            app.settingsRepository.setRaindropSaveMode(raindropModeRb?.tag?.toString() ?: "API")
 
-            sheet.dismiss()
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
+            sheet.dismiss()
         }
 
         sheet.show()

@@ -363,7 +363,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             saveBinding = null
         }
         
-        saveBinding?.tvSaveTitle?.text = "Loading title..."
+        saveBinding?.tvSaveTitle?.text = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Loading title..."
         
         var selectedListId: Long? = null
         val selectedTags = mutableSetOf<String>()
@@ -480,13 +480,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 viewModel.getArticle(currentArticleUrl) { article ->
                     if (article != null) {
                         viewModel.updateOfflinePath(currentArticleUrl, savedPath)
-                        runOnUiThread {
-                            Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
-                        }
                     } else {
-                        runOnUiThread {
-                            Toast.makeText(this, "Save the article first!", Toast.LENGTH_SHORT).show()
-                        }
+                        val title = binding.webView.title?.takeIf { it.isNotBlank() } ?: "Untitled Article"
+                        viewModel.saveArticle(currentArticleUrl, title, null, emptyList(), UrlUtils.isMediumDomain(currentArticleUrl))
+                        viewModel.updateOfflinePath(currentArticleUrl, savedPath)
+                    }
+                    runOnUiThread {
+                        Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {

@@ -123,7 +123,41 @@
         android:layout_height="wrap_content"
         android:text="Enable Auto-Sync"
         android:textColor="@color/text_primary"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Method"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupRaindropMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <RadioButton
+            android:id="@+id/radioRaindropApi"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Silent (Background API)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/accent"
+            android:tag="API" />
+
+        <RadioButton
+            android:id="@+id/radioRaindropIntent"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Via Raindrop App (Share Intent)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/accent"
+            android:tag="INTENT" />
+    </RadioGroup>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnApplyMirror"

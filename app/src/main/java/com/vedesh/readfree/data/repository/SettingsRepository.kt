@@ -32,4 +32,12 @@ class SettingsRepository(context: Context) {
     fun setRaindropSyncEnabled(enabled: Boolean) {
         sharedPrefs.edit().putBoolean("raindrop_sync_enabled", enabled).apply()
     }
+
+    fun getRaindropSaveMode(): String {
+        return sharedPrefs.getString("raindrop_save_mode", "API") ?: "API"
+    }
+
+    fun setRaindropSaveMode(mode: String) {
+        sharedPrefs.edit().putString("raindrop_save_mode", mode).apply()
+    }
 }

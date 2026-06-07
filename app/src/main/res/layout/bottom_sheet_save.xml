@@ -59,8 +59,9 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Add tag (comma or enter to save)"
+        android:hint="Add tag (comma to save)"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        app:hintTextAppearance="@style/TextAppearance.MaterialComponents.Caption"
         android:layout_marginBottom="24dp">
 
         <AutoCompleteTextView
@@ -68,6 +69,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
+            android:textSize="14sp"
             android:singleLine="true"
             android:textColor="@color/text_primary" />
     </com.google.android.material.textfield.TextInputLayout>

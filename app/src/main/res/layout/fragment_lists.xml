@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="My Lists"
-        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:srcCompat="@drawable/ic_add"
         app:titleTextColor="@color/text_primary" />
 
     <androidx.recyclerview.widget.RecyclerView
