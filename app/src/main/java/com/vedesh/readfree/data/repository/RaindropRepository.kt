@@ -61,8 +61,9 @@ class RaindropRepository(
         url: String,
         title: String,
         onResult: ((Boolean) -> Unit)? = null,
+        requireSyncEnabled: Boolean = false,
     ) {
-        if (!settingsRepo.isRaindropSyncEnabled()) {
+        if (requireSyncEnabled && !settingsRepo.isRaindropSyncEnabled()) {
             onResult?.invoke(false)
             return
         }

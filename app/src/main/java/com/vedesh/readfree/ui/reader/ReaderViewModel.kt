@@ -89,7 +89,7 @@ class ReaderViewModel(
                 if (it.title == "Loading..." || it.title == url || it.title.isEmpty()) {
                     articleRepo.update(it.copy(title = newTitle))
                     // Sync to Raindrop now that we have the real title
-                    raindropRepo.syncArticle(url, newTitle)
+                    raindropRepo.syncArticle(url, newTitle, requireSyncEnabled = true)
                 }
             }
         }

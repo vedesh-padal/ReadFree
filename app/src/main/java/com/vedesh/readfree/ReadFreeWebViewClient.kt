@@ -42,6 +42,9 @@ class ReadFreeWebViewClient(
         request: WebResourceRequest?,
     ): Boolean {
         val url = request?.url?.toString() ?: return false
+        val scheme = request?.url?.scheme ?: return false
+        // Only handle http/https externally; ignore cid:, file:, data: etc.
+        if (scheme != "http" && scheme != "https") return false
         // Mirror URLs and known Medium domains stay inside the WebView
         val isMirror = url.startsWith(mirrors.getActiveMirror()) || url.startsWith(MirrorRepository.DEFAULT_MIRROR)
         return if (isMirror || UrlUtils.isMediumDomain(url)) {
@@ -90,6 +93,17 @@ class ReadFreeWebViewClient(
         if (request?.isForMainFrame == true && statusCode >= 500) {
             listener.onMainFrameHttpError(statusCode)
         }
+    }
+
+    override fun shouldInterceptRequest(
+        view: WebView?,
+        request: WebResourceRequest?,
+    ): WebResourceResponse? {
+        // cid: URLs are used inside .mht files; intercept to prevent crash
+        if (request?.url?.scheme == "cid") {
+            return WebResourceResponse("text/plain", "UTF-8", null)
+        }
+        return super.shouldInterceptRequest(view, request)
     }
 
     override fun onReceivedSslError(

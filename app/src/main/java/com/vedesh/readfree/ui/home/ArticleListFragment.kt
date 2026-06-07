@@ -214,8 +214,13 @@ class ArticleListFragment : Fragment() {
         view.findViewById<View>(R.id.btnContextRaindrop).setOnClickListener {
             sheet.dismiss()
             val app = requireContext().applicationContext as ReadFreeApp
-            app.raindropRepository.syncArticle(item.article.url, item.article.title)
-            Toast.makeText(requireContext(), "Sent to Raindrop", Toast.LENGTH_SHORT).show()
+            app.saveToRaindrop(requireContext(), item.article.url, item.article.title) { success ->
+                requireActivity().runOnUiThread {
+                    Toast.makeText(requireContext(),
+                        if (success) "Sent to Raindrop" else "Failed to save to Raindrop",
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         view.findViewById<View>(R.id.btnContextCopy).setOnClickListener {

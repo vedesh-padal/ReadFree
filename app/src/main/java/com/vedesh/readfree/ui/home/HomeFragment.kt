@@ -289,8 +289,13 @@ class HomeFragment : Fragment() {
         view.findViewById<View>(R.id.btnContextRaindrop).setOnClickListener {
             sheet.dismiss()
             val app = requireContext().applicationContext as ReadFreeApp
-            app.raindropRepository.syncArticle(item.article.url, item.article.title)
-            Toast.makeText(requireContext(), "Sent to Raindrop", Toast.LENGTH_SHORT).show()
+            app.saveToRaindrop(requireContext(), item.article.url, item.article.title) { success ->
+                requireActivity().runOnUiThread {
+                    Toast.makeText(requireContext(),
+                        if (success) "Sent to Raindrop" else "Failed to save to Raindrop",
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         view.findViewById<View>(R.id.btnContextCopy).setOnClickListener {
@@ -375,6 +380,13 @@ class HomeFragment : Fragment() {
         // Load Raindrop settings
         sheetBinding.etRaindropToken.setText(app.settingsRepository.getRaindropToken() ?: "")
         sheetBinding.switchRaindropSync.isChecked = app.settingsRepository.isRaindropSyncEnabled()
+
+        val savedMode = app.settingsRepository.getRaindropSaveMode()
+        android.util.Log.d("ReadFreeSettings", "Loaded save mode: '$savedMode'")
+        sheetBinding.radioGroupRaindropMode.setOnCheckedChangeListener { _, id ->
+            val rb = sheetBinding.root.findViewById<RadioButton>(id)
+            android.util.Log.d("ReadFreeSettings", "Radio changed: id=$id, tag=${rb?.tag}")
+        }
 
         sheetBinding.btnVerifyToken.setOnClickListener {
             val token = sheetBinding.etRaindropToken.text.toString().trim()
@@ -461,11 +473,11 @@ class HomeFragment : Fragment() {
             app.settingsRepository.saveRaindropToken(sheetBinding.etRaindropToken.text.toString())
             app.settingsRepository.setRaindropSyncEnabled(sheetBinding.switchRaindropSync.isChecked)
 
-            val raindropModeRb =
-                sheetBinding.root.findViewById<RadioButton>(
-                    sheetBinding.radioGroupRaindropMode.checkedRadioButtonId,
-                )
-            app.settingsRepository.setRaindropSaveMode(raindropModeRb?.tag?.toString() ?: "API")
+            val checkedId = sheetBinding.radioGroupRaindropMode.checkedRadioButtonId
+            val raindropModeRb = sheetBinding.root.findViewById<RadioButton>(checkedId)
+            val modeToSave = raindropModeRb?.tag?.toString() ?: "API"
+            android.util.Log.d("ReadFreeSettings", "Saving mode: '$modeToSave' (checkedId=$checkedId)")
+            app.settingsRepository.setRaindropSaveMode(modeToSave)
 
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
             sheet.dismiss()
