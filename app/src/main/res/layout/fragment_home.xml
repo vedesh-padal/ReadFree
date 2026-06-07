@@ -84,6 +84,17 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     app:tint="@color/text_secondary" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSearchScope"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All ▾"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="12sp"
+                    android:paddingHorizontal="4dp"
+                    android:visibility="gone" />
+
                 <EditText
                     android:id="@+id/etSearch"
                     android:layout_width="0dp"

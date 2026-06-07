@@ -92,6 +92,30 @@ interface ArticleDao {
         listId: Long,
     ): Flow<List<ArticleWithTags>>
 
+    @Transaction
+    @Query(
+        """
+        SELECT DISTINCT a.* FROM articles a
+        LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
+        WHERE a.url NOT IN (SELECT articleUrl FROM article_list_xref)
+          AND (a.title LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
+        ORDER BY a.savedAt DESC
+    """,
+    )
+    fun searchUnsorted(query: String): Flow<List<ArticleWithTags>>
+
+    @Transaction
+    @Query(
+        """
+        SELECT DISTINCT a.* FROM articles a
+        LEFT JOIN article_tag_xref t ON a.url = t.articleUrl
+        WHERE a.offlineFilePath IS NOT NULL
+          AND (a.title LIKE '%' || :query || '%' OR t.tagName LIKE '%' || :query || '%')
+        ORDER BY a.savedAt DESC
+    """,
+    )
+    fun searchOffline(query: String): Flow<List<ArticleWithTags>>
+
     @Query("UPDATE articles SET readState = :state WHERE url = :url")
     suspend fun updateReadState(
         url: String,

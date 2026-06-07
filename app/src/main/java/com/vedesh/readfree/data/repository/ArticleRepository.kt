@@ -34,6 +34,10 @@ class ArticleRepository(private val articleDao: ArticleDao) {
         listId: Long,
     ): Flow<List<ArticleWithTags>> = articleDao.searchInList(query, listId)
 
+    fun searchUnsorted(query: String): Flow<List<ArticleWithTags>> = articleDao.searchUnsorted(query)
+
+    fun searchOffline(query: String): Flow<List<ArticleWithTags>> = articleDao.searchOffline(query)
+
     suspend fun updateReadState(
         url: String,
         state: ReadState,

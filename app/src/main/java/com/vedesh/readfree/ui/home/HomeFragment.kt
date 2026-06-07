@@ -133,13 +133,15 @@ class HomeFragment : Fragment() {
         binding.btnHomeSearchToggle.setOnClickListener {
             binding.toolbar.visibility = View.GONE
             binding.searchLayout.visibility = View.VISIBLE
+            binding.btnSearchScope.visibility = View.VISIBLE
             binding.etSearch.requestFocus()
-            // optionally show keyboard here
+            viewModel.setSearchScope(com.vedesh.readfree.ui.home.HomeViewModel.SearchScope.All)
         }
 
         binding.btnSearchBack.setOnClickListener {
             binding.searchLayout.visibility = View.GONE
             binding.toolbar.visibility = View.VISIBLE
+            binding.btnSearchScope.visibility = View.GONE
             binding.etSearch.text?.clear()
             viewModel.setSearchQuery("")
         }
@@ -169,6 +171,34 @@ class HomeFragment : Fragment() {
                 override fun afterTextChanged(s: Editable?) {}
             },
         )
+
+        // Search scope chip: show popup with options + user lists
+        binding.btnSearchScope.setOnClickListener { button ->
+            val popup = android.widget.PopupMenu(requireContext(), button)
+            popup.menu.add(0, 0, 0, "All")
+            popup.menu.add(0, 1, 0, "Unsorted")
+            popup.menu.add(0, 2, 0, "Offline")
+            val currentLists = viewModel.lists.value
+            currentLists.forEachIndexed { index, listWithCount ->
+                popup.menu.add(0, 10 + index, 0, listWithCount.list.name)
+            }
+            popup.setOnMenuItemClickListener { item ->
+                val scope = when (item.itemId) {
+                    0 -> com.vedesh.readfree.ui.home.HomeViewModel.SearchScope.All
+                    1 -> com.vedesh.readfree.ui.home.HomeViewModel.SearchScope.Unsorted
+                    2 -> com.vedesh.readfree.ui.home.HomeViewModel.SearchScope.Offline
+                    else -> {
+                        val idx = item.itemId - 10
+                        val lwc = currentLists[idx]
+                        com.vedesh.readfree.ui.home.HomeViewModel.SearchScope.ListScope(lwc.list.id, lwc.list.name)
+                    }
+                }
+                viewModel.setSearchScope(scope)
+                binding.btnSearchScope.text = "${item.title} ▾"
+                true
+            }
+            popup.show()
+        }
 
         // Setup Paste URL functionality
         binding.btnPasteRead.setOnClickListener {

@@ -30,11 +30,21 @@ class HomeViewModel(
         val tag: String? = null,
     )
 
+    sealed class SearchScope {
+        object All : SearchScope()
+        object Unsorted : SearchScope()
+        object Offline : SearchScope()
+        data class ListScope(val id: Long, val name: String) : SearchScope()
+    }
+
     private val _filterState = MutableStateFlow(FilterState())
     val filterState: StateFlow<FilterState> = _filterState.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchScope = MutableStateFlow<SearchScope>(SearchScope.All)
+    val searchScope: StateFlow<SearchScope> = _searchScope.asStateFlow()
 
     val lists =
         listRepo.getAllWithCounts().stateIn(
@@ -52,15 +62,16 @@ class HomeViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val articles: StateFlow<List<ArticleWithTags>> =
-        combine(_filterState, _searchQuery) { filter, query ->
-            filter to query
-        }.flatMapLatest { (filter, query) ->
+        combine(_filterState, _searchQuery, _searchScope) { filter, query, scope ->
+            Triple(filter, query, scope)
+        }.flatMapLatest { (filter, query, scope) ->
             when {
                 query.isNotEmpty() -> {
-                    if (filter.type == FilterType.LIST && filter.id != null) {
-                        articleRepo.searchInList(query, filter.id)
-                    } else {
-                        articleRepo.search(query)
+                    when (scope) {
+                        SearchScope.All -> articleRepo.search(query)
+                        SearchScope.Unsorted -> articleRepo.searchUnsorted(query)
+                        SearchScope.Offline -> articleRepo.searchOffline(query)
+                        is SearchScope.ListScope -> articleRepo.searchInList(query, scope.id)
                     }
                 }
                 else -> {
@@ -85,6 +96,10 @@ class HomeViewModel(
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setSearchScope(scope: SearchScope) {
+        _searchScope.value = scope
     }
 
     fun toggleReadState(articleUrl: String, currentState: ReadState) {
