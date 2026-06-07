@@ -10,6 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import com.vedesh.readfree.databinding.ActivityMainBinding
@@ -40,9 +41,38 @@ class MainActivity : AppCompatActivity() {
 
         setupWebView()
         setupToolbar()
+        setupBackNavigation()
+
+        // Set up click listener once in onCreate to prevent leaks
+        binding.btnPasteLoad.setOnClickListener {
+            val pasted = binding.etUrl.text.toString().trim()
+            if (pasted.isNotEmpty()) {
+                loadArticle(pasted)
+            } else {
+                Toast.makeText(this, "Paste a Medium link first", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Handle the intent that launched this activity
         handleIntent(intent)
+    }
+
+    private fun setupBackNavigation() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    binding.webView.canGoBack() -> binding.webView.goBack()
+                    binding.readerLayout.visibility == View.VISIBLE -> showHomeScreen()
+                    else -> {
+                        // Disable this callback and let system handle back (e.g. finish activity)
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -160,15 +190,6 @@ class MainActivity : AppCompatActivity() {
     private fun showHomeScreen() {
         binding.homeScreen.visibility = View.VISIBLE
         binding.readerLayout.visibility = View.GONE
-
-        binding.btnPasteLoad.setOnClickListener {
-            val pasted = binding.etUrl.text.toString().trim()
-            if (pasted.isNotEmpty()) {
-                loadArticle(pasted)
-            } else {
-                Toast.makeText(this, "Paste a Medium link first", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun openInBrowser(url: String) {
@@ -203,11 +224,5 @@ class MainActivity : AppCompatActivity() {
         return if (url.length > 60) url.take(57) + "…" else url
     }
 
-    override fun onBackPressed() {
-        when {
-            binding.webView.canGoBack() -> binding.webView.goBack()
-            binding.readerLayout.visibility == View.VISIBLE -> showHomeScreen()
-            else -> super.onBackPressed()
-        }
-    }
+
 }
