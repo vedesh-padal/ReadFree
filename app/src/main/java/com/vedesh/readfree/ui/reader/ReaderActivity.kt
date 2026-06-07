@@ -1,6 +1,9 @@
 package com.vedesh.readfree.ui.reader
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -50,6 +53,16 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         setupWebView()
         setupToolbar()
         setupBackNavigation()
+
+        binding.btnOffline.setOnClickListener {
+            saveOffline()
+        }
+        binding.btnSettings.setOnClickListener {
+            showSettingsSheet()
+        }
+        binding.btnErrorSettings.setOnClickListener {
+            showSettingsSheet()
+        }
 
         binding.btnRetry.setOnClickListener {
             if (currentArticleUrl.isNotEmpty()) {
@@ -219,12 +232,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 finish()
             }
         }
-        binding.btnSettings.setOnClickListener {
-            showSettingsSheet()
-        }
-        binding.btnErrorSettings.setOnClickListener {
-            showSettingsSheet()
-        }
     }
 
     private fun showSettingsSheet() {
@@ -285,13 +292,23 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         
         binding.loadingText.text = if (UrlUtils.isMediumDomain(cleanUrl)) "Contacting Freedium…" else "Loading…"
 
-        val loadUrl = if (UrlUtils.isMediumDomain(cleanUrl)) mirrors.buildProxyUrl(cleanUrl) else cleanUrl
-        binding.webView.loadUrl(loadUrl)
-        
-        // Check if article is already saved, if not, show quick save sheet
-        viewModel.checkIfExists(cleanUrl) { exists ->
-            if (!exists) {
-                showQuickSaveSheet()
+        // Check for offline load first
+        viewModel.getArticle(cleanUrl) { article ->
+            val offlinePath = article?.offlineFilePath
+            
+            runOnUiThread {
+                if (isOffline() && offlinePath != null && java.io.File(offlinePath).exists()) {
+                    binding.loadingText.text = "Loading offline version…"
+                    binding.webView.loadUrl("file://$offlinePath")
+                } else {
+                    val loadUrl = if (UrlUtils.isMediumDomain(cleanUrl)) mirrors.buildProxyUrl(cleanUrl) else cleanUrl
+                    binding.webView.loadUrl(loadUrl)
+                }
+            }
+            
+            // Check if article is already saved, if not, show quick save sheet
+            if (article == null) {
+                runOnUiThread { showQuickSaveSheet() }
             }
         }
     }
@@ -354,6 +371,43 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 .launchUrl(this, Uri.parse(url))
         } catch (e: Exception) {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+    }
+
+    private fun isOffline(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return true
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return true
+        return !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    private fun saveOffline() {
+        if (currentArticleUrl.isEmpty()) return
+        
+        val dir = java.io.File(filesDir, "offline")
+        if (!dir.exists()) dir.mkdirs()
+        
+        val filePath = java.io.File(dir, "${currentArticleUrl.hashCode()}.mht").absolutePath
+        binding.webView.saveWebArchive(filePath, false) { savedPath ->
+            if (savedPath != null) {
+                // Update database
+                viewModel.getArticle(currentArticleUrl) { article ->
+                    if (article != null) {
+                        viewModel.updateOfflinePath(currentArticleUrl, savedPath)
+                        runOnUiThread {
+                            Toast.makeText(this, "Saved for offline reading", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        runOnUiThread {
+                            Toast.makeText(this, "Save the article first!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else {
+                runOnUiThread {
+                    Toast.makeText(this, "Failed to save offline", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }

@@ -73,4 +73,12 @@ class ReaderViewModel(
             }
         }
     }
+
+    fun updateOfflinePath(url: String, path: String) {
+        viewModelScope.launch {
+            articleRepo.getByUrl(url)?.let { article ->
+                articleRepo.update(article.copy(offlineFilePath = path))
+            }
+        }
+    }
 }
