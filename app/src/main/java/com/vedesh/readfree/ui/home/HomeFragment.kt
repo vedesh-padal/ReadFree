@@ -111,11 +111,17 @@ class HomeFragment : Fragment() {
                     val item = adapter.currentList[position]
 
                     if (direction == ItemTouchHelper.RIGHT) {
-                        viewModel.toggleReadState(item.article.url, item.article.readState)
-                        // We don't remove the item immediately if filter is ALL, but UI updates via Flow
-                        adapter.notifyItemChanged(position)
+                        // Spec: swipe right always marks as READ (not a toggle)
+                        viewModel.setReadState(item.article.url, ReadState.READ)
                     } else if (direction == ItemTouchHelper.LEFT) {
+                        // Delete with 5s undo
                         viewModel.deleteArticle(item.article.url)
+                        com.google.android.material.snackbar.Snackbar
+                            .make(binding.root, "Removed from library", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                viewModel.restoreArticle(item)
+                            }
+                            .show()
                     }
                 }
             }

@@ -98,8 +98,19 @@ class HomeViewModel(
 
     fun deleteArticle(articleUrl: String) {
         viewModelScope.launch {
-            articleRepo.getByUrl(articleUrl)?.let {
-                articleRepo.delete(it)
+            articleRepo.getByUrl(articleUrl)?.let { articleRepo.delete(it) }
+        }
+    }
+
+    // Re-inserts the article + its list/tag associations after accidental swipe delete
+    fun restoreArticle(item: ArticleWithTags) {
+        viewModelScope.launch {
+            articleRepo.insert(item.article)
+            item.lists.forEach { list ->
+                listRepo.addArticleToList(item.article.url, list.id)
+            }
+            item.tags.forEach { tag ->
+                tagRepo.addTagToArticle(item.article.url, tag.name)
             }
         }
     }
