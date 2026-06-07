@@ -26,6 +26,7 @@ import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 import com.vedesh.readfree.databinding.FragmentHomeBinding
 import com.vedesh.readfree.ui.ViewModelFactory
 import com.vedesh.readfree.ui.reader.ReaderActivity
+import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.graphics.Color
@@ -63,6 +64,14 @@ class HomeFragment : Fragment() {
 
         binding.btnHomeSettings.setOnClickListener {
             showSettingsSheet()
+        }
+
+        binding.btnHomeLists.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_listsFragment)
+        }
+
+        binding.btnHomeTags.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_tagsFragment)
         }
 
         binding.fabAdd.setOnClickListener {

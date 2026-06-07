@@ -9,5 +9,24 @@
         android:id="@+id/homeFragment"
         android:name="com.vedesh.readfree.ui.home.HomeFragment"
         android:label="HomeFragment"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_homeFragment_to_listsFragment"
+            app:destination="@id/listsFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_tagsFragment"
+            app:destination="@id/tagsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/listsFragment"
+        android:name="com.vedesh.readfree.ui.lists.ListsFragment"
+        android:label="ListsFragment"
+        tools:layout="@layout/fragment_lists" />
+
+    <fragment
+        android:id="@+id/tagsFragment"
+        android:name="com.vedesh.readfree.ui.tags.TagsFragment"
+        android:label="TagsFragment"
+        tools:layout="@layout/fragment_tags" />
 </navigation>

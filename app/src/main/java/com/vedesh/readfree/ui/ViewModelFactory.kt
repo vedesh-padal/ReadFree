@@ -22,6 +22,12 @@ class ViewModelFactory(
         if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.reader.ReaderViewModel::class.java)) {
             return com.vedesh.readfree.ui.reader.ReaderViewModel(articleRepository, listRepository, tagRepository, raindropRepository) as T
         }
+        if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.lists.ListsViewModel::class.java)) {
+            return com.vedesh.readfree.ui.lists.ListsViewModel(listRepository) as T
+        }
+        if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.tags.TagsViewModel::class.java)) {
+            return com.vedesh.readfree.ui.tags.TagsViewModel(tagRepository) as T
+        }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -20,6 +20,26 @@
             app:titleTextColor="@color/text_primary">
 
             <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnHomeLists"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Lists"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="@color/text_secondary" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnHomeTags"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Tags"
+                android:src="@android:drawable/ic_menu_crop"
+                app:tint="@color/text_secondary" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/btnHomeSettings"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
