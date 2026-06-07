@@ -38,7 +38,7 @@ class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels {
         val app = requireContext().applicationContext as ReadFreeApp
-        ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository)
+        ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository, app.raindropRepository)
     }
 
     override fun onCreateView(
@@ -169,6 +169,7 @@ class HomeFragment : Fragment() {
         sheet.setContentView(sheetBinding.root)
 
         val currentMirror = mirrors.getActiveMirror()
+        val app = requireContext().applicationContext as ReadFreeApp
 
         if (currentMirror == MirrorRepository.DEFAULT_MIRROR) {
             sheetBinding.radioMirrorDefault.isChecked = true
@@ -183,7 +184,12 @@ class HomeFragment : Fragment() {
                 if (checkedId == sheetBinding.radioMirrorCustom.id) View.VISIBLE else View.GONE
         }
 
+        // Load Raindrop settings
+        sheetBinding.etRaindropToken.setText(app.settingsRepository.getRaindropToken() ?: "")
+        sheetBinding.switchRaindropSync.isChecked = app.settingsRepository.isRaindropSyncEnabled()
+
         sheetBinding.btnApplyMirror.setOnClickListener {
+            // Save Mirror
             val selected = sheetBinding.root.findViewById<RadioButton>(
                 sheetBinding.radioGroupMirrors.checkedRadioButtonId
             )
@@ -199,8 +205,13 @@ class HomeFragment : Fragment() {
             }
 
             mirrors.saveUserMirror(newUrl)
+            
+            // Save Raindrop Settings
+            app.settingsRepository.saveRaindropToken(sheetBinding.etRaindropToken.text.toString())
+            app.settingsRepository.setRaindropSyncEnabled(sheetBinding.switchRaindropSync.isChecked)
+
             sheet.dismiss()
-            Toast.makeText(requireContext(), "Mirror set to: $newUrl", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
         }
 
         sheet.show()

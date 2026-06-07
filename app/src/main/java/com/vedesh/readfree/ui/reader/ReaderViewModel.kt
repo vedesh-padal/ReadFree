@@ -3,16 +3,17 @@ package com.vedesh.readfree.ui.reader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vedesh.readfree.data.db.entity.Article
-import com.vedesh.readfree.data.db.entity.ArticleListXRef
 import com.vedesh.readfree.data.repository.ArticleRepository
 import com.vedesh.readfree.data.repository.ListRepository
+import com.vedesh.readfree.data.repository.RaindropRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ReaderViewModel(
     private val articleRepo: ArticleRepository,
-    private val listRepo: ListRepository
+    private val listRepo: ListRepository,
+    private val raindropRepo: RaindropRepository
 ) : ViewModel() {
 
     val lists = listRepo.getAllWithCounts().stateIn(
@@ -47,6 +48,8 @@ class ReaderViewModel(
             articleRepo.getByUrl(url)?.let {
                 if (it.title == "Loading..." || it.title == url || it.title.isEmpty()) {
                     articleRepo.update(it.copy(title = newTitle))
+                    // Sync to Raindrop now that we have the real title
+                    raindropRepo.syncArticle(url, newTitle)
                 }
             }
         }

@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="@color/toolbar_bg">
+    android:background="@drawable/bottom_sheet_bg">
 
     <!-- Handle bar -->
     <View
@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mirror Settings"
+        android:text="Settings"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
@@ -57,16 +57,15 @@
             android:text="Custom URL"
             android:textColor="@color/text_primary"
             android:buttonTint="@color/accent" />
-
     </RadioGroup>
 
-    <!-- Custom URL input — only shown when "Custom" is selected -->
+    <!-- Custom URL Input (Hidden by default) -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/customUrlLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="https://your-mirror.com/"
-        android:layout_marginBottom="24dp"
+        android:layout_marginTop="16dp"
+        android:hint="Enter mirror URL (e.g. https://freedium.cfd/)"
         android:visibility="gone"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
@@ -75,18 +74,63 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textUri"
-            android:singleLine="true"
             android:textColor="@color/text_primary" />
-
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/text_tertiary"
+        android:layout_marginVertical="24dp" />
+
+    <!-- Raindrop.io Sync -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Raindrop.io Integration"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sync saved articles directly to your Raindrop account."
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Raindrop Test Token"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etRaindropToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:textColor="@color/text_primary" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchRaindropSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enable Auto-Sync"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="24dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnApplyMirror"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Apply"
-        android:padding="14dp"
-        android:backgroundTint="@color/accent"
-        android:layout_marginBottom="8dp" />
+        android:text="Save Settings"
+        android:padding="12dp"
+        android:backgroundTint="@color/accent" />
 
 </LinearLayout>

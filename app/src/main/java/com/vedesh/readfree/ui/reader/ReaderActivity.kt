@@ -34,7 +34,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private val viewModel: ReaderViewModel by viewModels {
         val app = applicationContext as ReadFreeApp
-        ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository)
+        ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository, app.raindropRepository)
     }
 
     private var currentArticleUrl: String = ""
