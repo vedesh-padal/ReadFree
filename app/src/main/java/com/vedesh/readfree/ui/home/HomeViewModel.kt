@@ -69,11 +69,7 @@ class HomeViewModel(
                         FilterType.UNSORTED -> articleRepo.getUnsorted()
                         FilterType.OFFLINE -> articleRepo.getOffline()
                         FilterType.LIST -> filter.id?.let { articleRepo.getByList(it) } ?: articleRepo.getAll()
-                        FilterType.TAG -> {
-                            // For Phase 3, we haven't implemented getByTag in DAO, but we can search for it via search query
-                            // The search query searches tag matching anyway
-                            articleRepo.search(filter.tag ?: "")
-                        }
+                        FilterType.TAG -> filter.tag?.let { articleRepo.getByTag(it) } ?: articleRepo.getAll()
                     }
                 }
             }

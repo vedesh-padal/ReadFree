@@ -25,6 +25,8 @@ class ArticleRepository(private val articleDao: ArticleDao) {
 
     fun getOffline(): Flow<List<ArticleWithTags>> = articleDao.getOffline()
 
+    fun getByTag(tagName: String): Flow<List<ArticleWithTags>> = articleDao.getByTag(tagName)
+
     fun search(query: String): Flow<List<ArticleWithTags>> = articleDao.search(query)
 
     fun searchInList(

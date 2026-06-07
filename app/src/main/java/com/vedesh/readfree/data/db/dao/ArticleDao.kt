@@ -51,6 +51,17 @@ interface ArticleDao {
     @Query("SELECT * FROM articles WHERE offlineFilePath IS NOT NULL ORDER BY savedAt DESC")
     fun getOffline(): Flow<List<ArticleWithTags>>
 
+    @Transaction
+    @Query(
+        """
+        SELECT DISTINCT a.* FROM articles a
+        INNER JOIN article_tag_xref x ON a.url = x.articleUrl
+        WHERE x.tagName = :tagName
+        ORDER BY a.savedAt DESC
+    """,
+    )
+    fun getByTag(tagName: String): Flow<List<ArticleWithTags>>
+
     // Metadata search: title LIKE query OR has matching tag
     @Transaction
     @Query(

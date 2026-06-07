@@ -127,6 +127,10 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 domStorageEnabled = true
                 allowFileAccess = true
                 allowContentAccess = true
+                @Suppress("SetJavaScriptEnabled")
+                // Required to load embedded resources within .mht web archive files
+                @Suppress("DEPRECATION")
+                allowUniversalAccessFromFileURLs = true
                 loadWithOverviewMode = true
                 useWideViewPort = true
                 builtInZoomControls = true
@@ -334,15 +338,15 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             }
 
-            // Check if article is already saved to show banner
+            // Banner logic: only show 'in library' if the article was explicitly saved
+            // (has a non-empty title from SaveSheet). A download-only article has suppressBanner=true.
             if (article == null) {
                 runOnUiThread { showSaveBanner(isSaved = false) }
+            } else if (suppressBanner) {
+                suppressBanner = false
+                // Don't show banner — this was a download-only save
             } else {
-                if (suppressBanner) {
-                    suppressBanner = false
-                } else {
-                    runOnUiThread { showSaveBanner(isSaved = true) }
-                }
+                runOnUiThread { showSaveBanner(isSaved = true) }
             }
         }
     }

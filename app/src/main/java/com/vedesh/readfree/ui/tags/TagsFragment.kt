@@ -64,9 +64,7 @@ class TagsFragment : Fragment() {
                                     findNavController().navigate(R.id.action_tagsFragment_to_articleListFragment, bundle)
                                 }
                                 setOnLongClickListener {
-                                    // Long press to delete for now
-                                    viewModel.deleteTag(com.vedesh.readfree.data.db.entity.Tag(tagWithCount.name))
-                                    Toast.makeText(requireContext(), "Tag deleted", Toast.LENGTH_SHORT).show()
+                                    showTagOptionsDialog(tagWithCount.name)
                                     true
                                 }
                             }
@@ -77,19 +75,62 @@ class TagsFragment : Fragment() {
         }
 
         view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddTag).setOnClickListener {
-            val input = android.widget.EditText(requireContext())
-            input.hint = "Tag name"
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Create New Tag")
-                .setView(input)
-                .setPositiveButton("Create") { _, _ ->
-                    val name = input.text.toString().trim()
-                    if (name.isNotEmpty()) {
-                        viewModel.createTag(name)
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            showCreateTagDialog()
         }
+    }
+
+    private fun showTagOptionsDialog(tagName: String) {
+        val options = arrayOf("✏️ Rename", "🗑 Delete")
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("#$tagName")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showRenameTagDialog(tagName)
+                    1 -> showDeleteTagConfirmation(tagName)
+                }
+            }
+            .show()
+    }
+
+    private fun showRenameTagDialog(tagName: String) {
+        val input = android.widget.EditText(requireContext()).apply {
+            setText(tagName)
+            selectAll()
+        }
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Rename Tag")
+            .setView(input)
+            .setPositiveButton("Rename") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty() && newName != tagName) {
+                    viewModel.renameTag(tagName, newName)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showDeleteTagConfirmation(tagName: String) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Tag")
+            .setMessage("Delete \"#$tagName\"? It will be removed from all articles.")
+            .setPositiveButton("Delete") { _, _ ->
+                viewModel.deleteTag(com.vedesh.readfree.data.db.entity.Tag(tagName))
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showCreateTagDialog() {
+        val input = android.widget.EditText(requireContext()).apply { hint = "Tag name" }
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Create New Tag")
+            .setView(input)
+            .setPositiveButton("Create") { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isNotEmpty()) viewModel.createTag(name)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
