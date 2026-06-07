@@ -1,103 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/homeScreen"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
     android:background="@color/bg_primary">
 
-    <androidx.appcompat.widget.AppCompatImageButton
-        android:id="@+id/btnHomeSettings"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@android:drawable/ic_menu_preferences"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        app:tint="@color/text_secondary"
-        android:contentDescription="Settings"
-        android:layout_gravity="end"
-        android:layout_marginTop="-32dp"
-        android:layout_marginEnd="-16dp"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="📖"
-        android:textSize="64sp"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ReadFree"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Share any Medium link to this app,\nor paste one below."
-        android:textSize="14sp"
-        android:textColor="@color/text_secondary"
-        android:gravity="center"
-        android:layout_marginBottom="40dp" />
-
-    <com.google.android.material.textfield.TextInputLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Paste Medium URL here"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        android:background="@color/bg_primary"
+        app:elevation="0dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etUrl"
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Library"
+            app:titleTextColor="@color/text_primary">
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnHomeSettings"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Settings"
+                android:src="@android:drawable/ic_menu_preferences"
+                app:tint="@color/text_secondary" />
+
+        </androidx.appcompat.widget.Toolbar>
+
+        <!-- Search bar -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textUri"
-            android:singleLine="true"
-            android:textColor="@color/text_primary" />
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@android:drawable/ic_menu_search"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Search library..."
+                android:inputType="text"
+                android:singleLine="true"
+                android:textColor="@color/text_primary" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <LinearLayout
+        <!-- Filter Chips (Horizontal) -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupFilters"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAll"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All"
+                    android:checked="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipUnsorted"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Unsorted" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipOffline"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Offline" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="16dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPasteLoad"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Read Article"
-            android:padding="14dp"
-            android:layout_marginEnd="8dp"
-            android:backgroundTint="@color/accent" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="+ Save"
-            android:padding="14dp"
-            android:layout_marginStart="8dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:strokeColor="@color/accent"
-            android:textColor="@color/accent" />
-    </LinearLayout>
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:listitem="@layout/item_article_card" />
 
     <TextView
+        android:id="@+id/tvEmptyState"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:text="Tip: Share from Chrome → tap ReadFree"
-        android:textSize="12sp"
-        android:textColor="@color/text_secondary" />
+        android:layout_gravity="center"
+        android:text="Library is empty.\nPaste a URL to save!"
+        android:textColor="@color/text_secondary"
+        android:textAlignment="center"
+        android:visibility="gone" />
 
-</LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:contentDescription="Add Article"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/accent"
+        app:tint="@color/bg_primary" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
