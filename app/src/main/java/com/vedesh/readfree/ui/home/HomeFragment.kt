@@ -368,6 +368,27 @@ class HomeFragment : Fragment() {
         sheetBinding.etRaindropToken.setText(app.settingsRepository.getRaindropToken() ?: "")
         sheetBinding.switchRaindropSync.isChecked = app.settingsRepository.isRaindropSyncEnabled()
 
+        // Offline Storage section
+        val offlineDir = java.io.File(requireContext().filesDir, "offline")
+        val sizeBytes = if (offlineDir.exists()) {
+            offlineDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+        } else {
+            0L
+        }
+        val sizeMb = String.format("%.2f MB", sizeBytes / (1024f * 1024f))
+        sheetBinding.tvOfflineStorageUsed.text = "Used: $sizeMb"
+
+        sheetBinding.btnClearOffline.setOnClickListener {
+            if (offlineDir.exists()) {
+                offlineDir.deleteRecursively()
+            }
+            lifecycleScope.launch {
+                app.articleRepository.clearAllOfflinePaths()
+            }
+            sheetBinding.tvOfflineStorageUsed.text = "Used: 0.00 MB"
+            Toast.makeText(requireContext(), "Offline files cleared", Toast.LENGTH_SHORT).show()
+        }
+
         sheetBinding.btnApplyMirror.setOnClickListener {
             // Save Mirror
             val selected = sheetBinding.root.findViewById<RadioButton>(

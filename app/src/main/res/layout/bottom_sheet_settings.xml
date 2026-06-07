@@ -133,4 +133,41 @@
         android:padding="12dp"
         android:backgroundTint="@color/accent" />
 
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/text_tertiary"
+        android:layout_marginVertical="24dp" />
+
+    <!-- Offline Storage -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Offline Storage"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvOfflineStorageUsed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calculating..."
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnClearOffline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clear offline files"
+        android:padding="12dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:strokeColor="#F44336"
+        android:textColor="#F44336"
+        android:layout_marginBottom="24dp" />
+
 </LinearLayout>
