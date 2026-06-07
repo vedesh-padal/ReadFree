@@ -36,7 +36,7 @@ class ReadFreeWebViewClient(
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
         val url = request?.url?.toString() ?: return false
         // Mirror URLs and known Medium domains stay inside the WebView
-        val isMirror = mirrors.builtInMirrors.any { url.startsWith(it) }
+        val isMirror = url.startsWith(mirrors.getActiveMirror()) || url.startsWith(MirrorRepository.DEFAULT_MIRROR)
         return if (isMirror || UrlUtils.isMediumDomain(url)) {
             false
         } else {

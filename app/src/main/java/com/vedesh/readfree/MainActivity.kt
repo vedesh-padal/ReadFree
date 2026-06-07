@@ -148,10 +148,6 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     // ── Mirror failover ───────────────────────────────────────────────────────
 
-    /**
-     * Asks [MirrorRepository] to advance to the next mirror and retries loading.
-     * If all mirrors are exhausted, shows the error panel.
-     */
     private fun tryNextMirrorOrShowError() {
         binding.loadingView.visibility = View.GONE
         if (mirrors.tryNextMirror() && currentArticleUrl.isNotEmpty()) {
@@ -160,8 +156,8 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             binding.webView.loadUrl(mirrors.currentMirrorUrl(currentArticleUrl))
         } else {
             binding.errorView.visibility = View.VISIBLE
-            binding.errorText.text = "All mirrors failed to load this article."
-            binding.errorSubText.text = "Check your connection or try again later."
+            binding.errorText.text = "Failed to load the article."
+            binding.errorSubText.text = "Both the selected and default mirrors failed. You can verify your connection or configure a different mirror."
         }
     }
 
@@ -177,6 +173,12 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         binding.btnSettings.setOnClickListener {
             showSettingsSheet()
         }
+        binding.btnHomeSettings.setOnClickListener {
+            showSettingsSheet()
+        }
+        binding.btnErrorSettings.setOnClickListener {
+            showSettingsSheet()
+        }
     }
 
     private fun showSettingsSheet() {
@@ -186,15 +188,9 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
         val currentMirror = mirrors.getActiveMirror()
 
-        // Pre-select the matching preset radio, or fall back to Custom
-        val presetRadios = listOf(
-            sheetBinding.radioMirror1,
-            sheetBinding.radioMirror2,
-            sheetBinding.radioMirror3
-        )
-        val matched = presetRadios.firstOrNull { it.tag as? String == currentMirror }
-        if (matched != null) {
-            matched.isChecked = true
+        // Pre-select the default or custom radio
+        if (currentMirror == MirrorRepository.DEFAULT_MIRROR) {
+            sheetBinding.radioMirrorDefault.isChecked = true
         } else {
             sheetBinding.radioMirrorCustom.isChecked = true
             sheetBinding.customUrlLayout.visibility = View.VISIBLE
@@ -219,7 +215,7 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
                 if (custom.endsWith("/")) custom else "$custom/"
             } else {
-                selected?.tag as? String ?: mirrors.builtInMirrors[0]
+                MirrorRepository.DEFAULT_MIRROR
             }
 
             mirrors.saveUserMirror(newUrl)
@@ -244,6 +240,7 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         mirrors.resetMirrorIndex()
 
         binding.homeScreen.visibility = View.GONE
+        binding.btnHomeSettings.visibility = View.GONE
         binding.readerLayout.visibility = View.VISIBLE
         binding.errorView.visibility = View.GONE
         binding.loadingView.visibility = View.VISIBLE
@@ -252,6 +249,7 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private fun showHomeScreen() {
         binding.homeScreen.visibility = View.VISIBLE
+        binding.btnHomeSettings.visibility = View.VISIBLE
         binding.readerLayout.visibility = View.GONE
     }
 

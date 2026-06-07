@@ -6,26 +6,30 @@ import android.content.Context
  * Owns all mirror-related state and persistence.
  *
  * Responsibilities:
- *  - Holds the ordered list of built-in fallback mirrors
+ *  - Holds the default fallback mirror (freedium-mirror.cfd)
  *  - Persists the user's preferred mirror via SharedPreferences
  *  - Builds the full proxy URL for a given article URL
  *  - Tracks which mirror is currently active during failover
- *
- * MainActivity depends on this class for all mirror decisions so that none
- * of that logic leaks into the UI layer.
  */
 class MirrorRepository(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /** Built-in mirrors tried in order during automatic failover. */
-    val builtInMirrors = listOf(
-        "https://freedium.cfd/",
-        "https://www.freedium.cfd/",
-        "https://scribe.rip/"
-    )
+    init {
+        val current = prefs.getString(PREF_MIRROR_URL, null)
+        val deprecatedMirrors = setOf(
+            "https://freedium.cfd/",
+        )
+        if (current != null && current in deprecatedMirrors) {
+            prefs.edit().putString(PREF_MIRROR_URL, DEFAULT_MIRROR).apply()
+        }
+    }
 
-    /** Index into [builtInMirrors] used during failover. Reset to 0 on each new article load. */
+    // Dynamic list of mirrors for the current load attempt.
+    // Built inside resetMirrorIndex() based on active mirror and default.
+    private var activeTryList = listOf(DEFAULT_MIRROR)
+
+    /** Index into [activeTryList] used during failover. Reset to 0 on each new article load. */
     var currentMirrorIndex: Int = 0
         private set
 
@@ -33,10 +37,10 @@ class MirrorRepository(context: Context) {
 
     /**
      * Returns the active mirror base URL.
-     * User-saved preference takes priority; falls back to [builtInMirrors][0].
+     * User-saved preference takes priority; falls back to [DEFAULT_MIRROR].
      */
     fun getActiveMirror(): String {
-        return prefs.getString(PREF_MIRROR_URL, builtInMirrors[0]) ?: builtInMirrors[0]
+        return prefs.getString(PREF_MIRROR_URL, DEFAULT_MIRROR) ?: DEFAULT_MIRROR
     }
 
     /** Persists [url] as the user's preferred mirror. */
@@ -49,15 +53,21 @@ class MirrorRepository(context: Context) {
     /** Resets the failover index. Call this at the start of every new article load. */
     fun resetMirrorIndex() {
         currentMirrorIndex = 0
+        val active = getActiveMirror()
+        val list = mutableListOf(active)
+        if (active != DEFAULT_MIRROR) {
+            list.add(DEFAULT_MIRROR)
+        }
+        activeTryList = list
     }
 
     /**
-     * Advances to the next built-in mirror.
+     * Advances to the next mirror in the active try list.
      * Returns true if a next mirror is available, false if all are exhausted.
      */
     fun tryNextMirror(): Boolean {
         val next = currentMirrorIndex + 1
-        return if (next < builtInMirrors.size) {
+        return if (next < activeTryList.size) {
             currentMirrorIndex = next
             true
         } else {
@@ -72,13 +82,13 @@ class MirrorRepository(context: Context) {
      *
      * Rules:
      *  - If [originalUrl] already starts with a known mirror URL, return it as-is.
-     *  - On the first attempt (index 0), use the user's preferred mirror.
-     *  - On subsequent failover attempts, use [builtInMirrors][currentMirrorIndex].
+     *  - Use [activeTryList][currentMirrorIndex] to proxy the url.
      */
     fun buildProxyUrl(originalUrl: String): String {
-        if (builtInMirrors.any { originalUrl.startsWith(it) }) return originalUrl
-        val base = if (currentMirrorIndex == 0) getActiveMirror() else builtInMirrors[currentMirrorIndex]
-        return "$base$originalUrl"
+        if (originalUrl.startsWith(DEFAULT_MIRROR) || originalUrl.startsWith(getActiveMirror())) {
+            return originalUrl
+        }
+        return "${activeTryList[currentMirrorIndex]}$originalUrl"
     }
 
     /**
@@ -86,11 +96,12 @@ class MirrorRepository(context: Context) {
      * Used by [tryNextMirrorOrShowError] after [tryNextMirror] has advanced the index.
      */
     fun currentMirrorUrl(articleUrl: String): String {
-        return builtInMirrors[currentMirrorIndex] + articleUrl
+        return activeTryList[currentMirrorIndex] + articleUrl
     }
 
     companion object {
         private const val PREFS_NAME = "readfree_prefs"
         private const val PREF_MIRROR_URL = "mirror_url"
+        const val DEFAULT_MIRROR = "https://freedium-mirror.cfd/"
     }
 }
