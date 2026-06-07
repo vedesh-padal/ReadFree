@@ -7,22 +7,38 @@ import android.view.View
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.vedesh.readfree.MirrorRepository
+import com.vedesh.readfree.ReadFreeApp
 import com.vedesh.readfree.ReadFreeWebViewClient
 import com.vedesh.readfree.UrlUtils
 import com.vedesh.readfree.databinding.ActivityReaderBinding
+import com.vedesh.readfree.databinding.BottomSheetSaveBinding
 import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
+import com.vedesh.readfree.ui.ViewModelFactory
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     private lateinit var binding: ActivityReaderBinding
     private lateinit var mirrors: MirrorRepository
 
+    private val viewModel: ReaderViewModel by viewModels {
+        val app = applicationContext as ReadFreeApp
+        ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository)
+    }
+
     private var currentArticleUrl: String = ""
+    private var saveSheet: BottomSheetDialog? = null
+    private var saveBinding: BottomSheetSaveBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,7 +116,18 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
     override fun onPageFinished(url: String?) {
         binding.loadingView.visibility = View.GONE
-        url?.let { binding.urlBar.text = UrlUtils.formatUrlForDisplay(it) }
+        if (url != null) {
+            binding.urlBar.text = UrlUtils.formatUrlForDisplay(url)
+            
+            // Try to extract title from webview
+            binding.webView.evaluateJavascript("(function() { return document.title; })();") { titleRaw ->
+                val title = titleRaw?.removeSurrounding("\"")?.trim() ?: "Untitled"
+                viewModel.updateTitle(currentArticleUrl, title)
+                
+                // If save sheet is currently showing, update its title
+                saveBinding?.tvSaveTitle?.text = title
+            }
+        }
     }
 
     override fun onMainFrameError() {
@@ -224,6 +251,63 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
 
         val loadUrl = if (UrlUtils.isMediumDomain(cleanUrl)) mirrors.buildProxyUrl(cleanUrl) else cleanUrl
         binding.webView.loadUrl(loadUrl)
+        
+        // Check if article is already saved, if not, show quick save sheet
+        viewModel.checkIfExists(cleanUrl) { exists ->
+            if (!exists) {
+                showQuickSaveSheet()
+            }
+        }
+    }
+    
+    private fun showQuickSaveSheet() {
+        if (saveSheet != null) return
+        
+        saveSheet = BottomSheetDialog(this)
+        saveBinding = BottomSheetSaveBinding.inflate(layoutInflater)
+        saveSheet?.setContentView(saveBinding!!.root)
+        
+        saveSheet?.setOnDismissListener {
+            saveSheet = null
+            saveBinding = null
+        }
+        
+        saveBinding?.tvSaveTitle?.text = "Loading title..."
+        
+        var selectedListId: Long? = null
+
+        // Populate lists
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.lists.collectLatest { lists ->
+                    val names = lists.map { it.list.name }.toTypedArray()
+                    val adapter = android.widget.ArrayAdapter(
+                        this@ReaderActivity,
+                        android.R.layout.simple_dropdown_item_1line,
+                        names
+                    )
+                    saveBinding?.spinnerLists?.setAdapter(adapter)
+                    
+                    saveBinding?.spinnerLists?.setOnItemClickListener { _, _, position, _ ->
+                        selectedListId = lists[position].list.id
+                    }
+                }
+            }
+        }
+
+        saveBinding?.btnSaveAndClose?.setOnClickListener {
+            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, UrlUtils.isMediumDomain(currentArticleUrl))
+            saveSheet?.dismiss()
+            Toast.makeText(this, "Saved to library", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+
+        saveBinding?.btnReadNow?.setOnClickListener {
+            viewModel.saveArticle(currentArticleUrl, saveBinding?.tvSaveTitle?.text.toString(), selectedListId, UrlUtils.isMediumDomain(currentArticleUrl))
+            saveSheet?.dismiss()
+        }
+
+        saveSheet?.show()
     }
 
     private fun openInBrowser(url: String) {
