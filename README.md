@@ -1,105 +1,67 @@
 # ReadFree 📖
 
-A minimal Android app that bypasses Medium paywalls using freedium-mirror.cfd.
+Read any Medium article for free — share a link, the app proxies it through a Freedium mirror and renders it inside a WebView. No browser redirect. No paywall.
 
-**Share any Medium link → ReadFree → read it free, inside the app.**
+---
+
+## How it works
+
+1. **Share** a Medium link from any app (Chrome, Twitter, etc.) → select **ReadFree** from the share sheet
+2. **Or paste** a URL directly from the home screen
+3. **Or tap** a medium.com link — ReadFree will intercept it
+
+The article is loaded through a Freedium-compatible mirror. If the primary mirror fails, the app automatically tries the next one. A gear icon in the toolbar lets you set your own preferred mirror URL.
 
 ---
 
 ## Features
-- Appears in Android share sheet for any `text/plain` share (Medium links from Chrome, Twitter, etc.)
-- Handles direct medium.com link taps
-- Opens article inside the app via WebView (no browser redirect)
-- "Browser" button to open the current article in Chrome Custom Tab
-- Paste-a-link home screen if you open the app directly
-- Dark theme
+
+- Share-sheet integration — catches `text/plain` shares from any app
+- Direct medium.com link interception
+- In-app WebView reader — no browser handoff
+- Centered loading overlay with status text
+- Auto-failover across multiple Freedium mirrors on network/HTTP errors
+- SSL error dialog — warns you before bypassing a bad certificate
+- **Mirror settings** — pick a preset or enter a custom mirror URL; persisted across sessions
+- "Open in Browser" via Chrome Custom Tab
+- Dark theme, foldable/split-screen safe
 
 ---
 
-## Get the APK — 3 ways
+## Get the APK
 
-### Option 1: GitHub Actions (easiest, no setup)
+### Option 1: GitHub Actions (no local setup needed)
 
-1. Create a GitHub account if you don't have one
-2. Create a new **public** repository (call it `readfree` or anything)
-3. Push this project to it:
-   ```bash
-   cd readfree
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-   git push -u origin main
-   ```
-4. Go to your repo on GitHub → **Actions** tab
-5. The workflow runs automatically. Wait ~3-5 minutes.
-6. Click the completed workflow run → scroll down to **Artifacts** → download **ReadFree-debug**
-7. Unzip → you get `app-debug.apk`
-8. Transfer to phone → install (enable "Install from unknown sources" first)
+1. Fork or push this repo to your GitHub account
+2. Go to the repo → **Actions** tab
+3. The **Build APK** workflow runs automatically on every push (~2–3 min)
+4. Click the completed run → **Artifacts** → download **ReadFree-debug**
+5. Unzip → transfer `app-debug.apk` to your phone → install
+   > Enable **"Install from unknown sources"** in your phone's settings first
 
-> You can also trigger it manually: Actions → Build APK → Run workflow
+You can also trigger it manually: **Actions → Build APK → Run workflow**
 
----
+### Option 2: Build locally
 
-### Option 2: Codemagic (no GitHub needed)
+Requires JDK 17 and Android SDK (platform 34, build-tools 34).
 
-1. Go to [codemagic.io](https://codemagic.io) → sign up free
-2. Connect your GitHub/GitLab or upload zip
-3. Select "Android" project → click Build
-4. Download APK from build artifacts
-
----
-
-### Option 3: Build locally on Ubuntu
-
-**One-time setup:**
 ```bash
-# Install Java 17
-sudo apt install openjdk-17-jdk
-
-# Download Android command line tools
-mkdir -p ~/android-sdk/cmdline-tools
-cd ~/android-sdk/cmdline-tools
-wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-unzip commandlinetools-linux-11076708_latest.zip
-mv cmdline-tools latest
-
-# Set env vars (add to ~/.zshrc)
-export ANDROID_HOME=$HOME/android-sdk
-export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-
-# Accept licenses and install required SDK components
-sdkmanager --licenses
-sdkmanager "platforms;android-34" "build-tools;34.0.0"
-```
-
-**Build:**
-```bash
-cd readfree
 chmod +x gradlew
 ./gradlew assembleDebug
-
-# APK is at:
-# app/build/outputs/apk/debug/app-debug.apk
+# APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ---
 
-## Changing the Freedium mirror URL
+## Changing the mirror
 
-If `freedium-mirror.cfd` goes down, edit this line in `MainActivity.kt`:
+Tap the **⚙ gear icon** in the reader toolbar → pick a preset or type your own URL → Apply.
 
-```kotlin
-private val FREEDIUM_BASE = "https://freedium-mirror.cfd/"
-```
-
-Replace with any working mirror and rebuild.
+No rebuild needed.
 
 ---
 
-## Future ideas
-- Save articles locally (offline reading)
-- Tags and lists
-- Raindrop.io integration (share saved articles)
-- Substack RSS fallback support
-- Multiple paywall bypass services with auto-failover
+## Requirements
+
+- Android 8.0+ (API 26)
+- Internet permission only — no other permissions requested
