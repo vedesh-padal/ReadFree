@@ -55,4 +55,8 @@ class ArticleRepository(private val articleDao: ArticleDao) {
     ) = articleDao.updateRaindropTs(url, ts)
 
     suspend fun clearAllOfflinePaths() = articleDao.clearAllOfflinePaths()
+
+    fun observeArticleCount() = articleDao.observeArticleCount()
+    fun observeOfflineCount() = articleDao.observeOfflineCount()
+    fun observeUnsortedCount() = articleDao.observeUnsortedCount()
 }

@@ -118,4 +118,13 @@ interface ArticleDao {
 
     @Query("UPDATE articles SET offlineFilePath = NULL")
     suspend fun clearAllOfflinePaths()
+
+    @Query("SELECT COUNT(*) FROM articles")
+    fun observeArticleCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM articles WHERE offlineFilePath IS NOT NULL")
+    fun observeOfflineCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM articles WHERE url NOT IN (SELECT articleUrl FROM article_list_xref)")
+    fun observeUnsortedCount(): Flow<Int>
 }

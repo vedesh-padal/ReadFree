@@ -23,7 +23,7 @@ class ViewModelFactory(
             return com.vedesh.readfree.ui.reader.ReaderViewModel(articleRepository, listRepository, tagRepository, raindropRepository) as T
         }
         if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.lists.ListsViewModel::class.java)) {
-            return com.vedesh.readfree.ui.lists.ListsViewModel(listRepository) as T
+            return com.vedesh.readfree.ui.lists.ListsViewModel(listRepository, articleRepository) as T
         }
         if (modelClass.isAssignableFrom(com.vedesh.readfree.ui.tags.TagsViewModel::class.java)) {
             return com.vedesh.readfree.ui.tags.TagsViewModel(tagRepository) as T

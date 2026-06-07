@@ -21,7 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.vedesh.readfree.R
 import com.vedesh.readfree.ReadFreeApp
-import com.vedesh.readfree.data.model.ListWithCount
+import com.vedesh.readfree.data.db.entity.ArticleList
 import com.vedesh.readfree.ui.ViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -33,7 +33,7 @@ class ListsFragment : Fragment() {
         ViewModelFactory(app.articleRepository, app.listRepository, app.tagRepository, app.raindropRepository)
     }
 
-    private lateinit var adapter: ListAdapterImpl
+    private lateinit var adapter: ListItemAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,14 +57,28 @@ class ListsFragment : Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerViewLists)
 
         adapter =
-            ListAdapterImpl(
-                onItemClick = { listWithCount ->
+            ListItemAdapter(
+                onSystemRowClick = { systemRow ->
                     val bundle =
-                        android.os.Bundle().apply {
-                            putLong("listId", listWithCount.list.id)
-                            putString("title", listWithCount.list.name)
+                        Bundle().apply {
+                            putString("title", systemRow.name)
+                            when (systemRow.id) {
+                                "_offline" -> putBoolean("isOffline", true)
+                                "_unsorted" -> putBoolean("isUnsorted", true)
+                            }
                         }
                     findNavController().navigate(R.id.action_listsFragment_to_articleListFragment, bundle)
+                },
+                onUserListClick = { userListItem ->
+                    val bundle =
+                        Bundle().apply {
+                            putLong("listId", userListItem.listWithCount.list.id)
+                            putString("title", userListItem.listWithCount.list.name)
+                        }
+                    findNavController().navigate(R.id.action_listsFragment_to_articleListFragment, bundle)
+                },
+                onUserListLongClick = { userListItem ->
+                    showEditListSheet(userListItem.listWithCount.list)
                 },
             )
         view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddList).setOnClickListener {
@@ -93,12 +107,31 @@ class ListsFragment : Fragment() {
                         return true
                     }
 
+                    override fun isLongPressDragEnabled(): Boolean = false
+
+                    override fun isItemViewSwipeEnabled(): Boolean = true
+
+                    override fun getDragDirs(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                    ): Int {
+                        return if (adapter.currentList[viewHolder.adapterPosition] is ListItem.SystemRow)
+                            0 else ItemTouchHelper.UP or ItemTouchHelper.DOWN
+                    }
+
+                    override fun getSwipeDirs(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                    ): Int {
+                        return if (adapter.currentList[viewHolder.adapterPosition] is ListItem.SystemRow)
+                            0 else ItemTouchHelper.LEFT
+                    }
+
                     override fun clearView(
                         recyclerView: RecyclerView,
                         viewHolder: RecyclerView.ViewHolder,
                     ) {
                         super.clearView(recyclerView, viewHolder)
-                        // When drag ends, update order in DB
                         viewModel.updateSortOrder(adapter.currentList)
                     }
 
@@ -107,11 +140,11 @@ class ListsFragment : Fragment() {
                         direction: Int,
                     ) {
                         val position = viewHolder.adapterPosition
-                        val item = adapter.currentList[position]
-                        viewModel.deleteList(item.list)
+                        val item = adapter.currentList[position] as ListItem.UserList
+                        viewModel.deleteList(item.listWithCount.list)
                         Snackbar.make(view, "List deleted", Snackbar.LENGTH_LONG)
                             .setAction("Undo") {
-                                viewModel.restoreList(item.list)
+                                viewModel.restoreList(item.listWithCount.list)
                             }.show()
                     }
                 },
@@ -127,57 +160,109 @@ class ListsFragment : Fragment() {
         }
     }
 
-    class ListAdapterImpl(
-        private val onItemClick: (ListWithCount) -> Unit,
-    ) : ListAdapter<ListWithCount, ListAdapterImpl.ViewHolder>(ListDiffCallback()) {
+    private val VIEW_TYPE_SYSTEM = 0
+    private val VIEW_TYPE_USER_LIST = 1
+
+    inner class ListItemAdapter(
+        private val onSystemRowClick: (ListItem.SystemRow) -> Unit,
+        private val onUserListClick: (ListItem.UserList) -> Unit,
+        private val onUserListLongClick: (ListItem.UserList) -> Unit,
+    ) : ListAdapter<ListItem, RecyclerView.ViewHolder>(ListItemDiffCallback()) {
+        override fun getItemViewType(position: Int): Int {
+            return when (getItem(position)) {
+                is ListItem.SystemRow -> VIEW_TYPE_SYSTEM
+                is ListItem.UserList -> VIEW_TYPE_USER_LIST
+            }
+        }
+
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int,
-        ): ViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list_row, parent, false)
-            return ViewHolder(view, onItemClick)
+        ): RecyclerView.ViewHolder {
+            return when (viewType) {
+                VIEW_TYPE_SYSTEM -> {
+                    val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list_row, parent, false)
+                    SystemRowViewHolder(view, onSystemRowClick)
+                }
+                else -> {
+                    val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list_row, parent, false)
+                    UserListViewHolder(view, onUserListClick, onUserListLongClick)
+                }
+            }
         }
 
         override fun onBindViewHolder(
-            holder: ViewHolder,
+            holder: RecyclerView.ViewHolder,
             position: Int,
         ) {
-            holder.bind(getItem(position))
-        }
-
-        class ViewHolder(
-            view: View,
-            private val onItemClick: (ListWithCount) -> Unit,
-        ) : RecyclerView.ViewHolder(view) {
-            private val tvEmoji: TextView = view.findViewById(R.id.tvEmoji)
-            private val tvListName: TextView = view.findViewById(R.id.tvListName)
-            private val tvCount: TextView = view.findViewById(R.id.tvCount)
-            private val ivDragHandle: ImageView = view.findViewById(R.id.ivDragHandle)
-
-            fun bind(item: ListWithCount) {
-                itemView.setOnClickListener { onItemClick(item) }
-                tvEmoji.text = item.list.emoji
-                tvListName.text = item.list.name
-                tvListName.setTextColor(Color.parseColor(item.list.colorHex))
-                tvCount.text = item.articleCount.toString()
-                ivDragHandle.visibility = View.VISIBLE
+            when (holder) {
+                is SystemRowViewHolder -> holder.bind(getItem(position) as ListItem.SystemRow)
+                is UserListViewHolder -> holder.bind(getItem(position) as ListItem.UserList)
             }
         }
+    }
 
-        class ListDiffCallback : DiffUtil.ItemCallback<ListWithCount>() {
-            override fun areItemsTheSame(
-                oldItem: ListWithCount,
-                newItem: ListWithCount,
-            ): Boolean {
-                return oldItem.list.id == newItem.list.id
-            }
+    class SystemRowViewHolder(
+        view: View,
+        private val onSystemRowClick: (ListItem.SystemRow) -> Unit,
+    ) : RecyclerView.ViewHolder(view) {
+        private val tvEmoji: TextView = view.findViewById(R.id.tvEmoji)
+        private val tvListName: TextView = view.findViewById(R.id.tvListName)
+        private val tvCount: TextView = view.findViewById(R.id.tvCount)
+        private val ivDragHandle: ImageView = view.findViewById(R.id.ivDragHandle)
 
-            override fun areContentsTheSame(
-                oldItem: ListWithCount,
-                newItem: ListWithCount,
-            ): Boolean {
-                return oldItem == newItem
+        fun bind(item: ListItem.SystemRow) {
+            itemView.setOnClickListener { onSystemRowClick(item) }
+            tvEmoji.text = item.emoji
+            tvListName.text = item.name
+            tvListName.setTextColor(Color.parseColor(item.colorHex))
+            tvCount.text = item.count.toString()
+            ivDragHandle.visibility = View.GONE
+        }
+    }
+
+    class UserListViewHolder(
+        view: View,
+        private val onUserListClick: (ListItem.UserList) -> Unit,
+        private val onUserListLongClick: (ListItem.UserList) -> Unit,
+    ) : RecyclerView.ViewHolder(view) {
+        private val tvEmoji: TextView = view.findViewById(R.id.tvEmoji)
+        private val tvListName: TextView = view.findViewById(R.id.tvListName)
+        private val tvCount: TextView = view.findViewById(R.id.tvCount)
+        private val ivDragHandle: ImageView = view.findViewById(R.id.ivDragHandle)
+
+        fun bind(item: ListItem.UserList) {
+            val listWithCount = item.listWithCount
+            itemView.setOnClickListener { onUserListClick(item) }
+            itemView.setOnLongClickListener {
+                onUserListLongClick(item)
+                true
             }
+            tvEmoji.text = listWithCount.list.emoji
+            tvListName.text = listWithCount.list.name
+            tvListName.setTextColor(Color.parseColor(listWithCount.list.colorHex))
+            tvCount.text = listWithCount.articleCount.toString()
+            ivDragHandle.visibility = View.VISIBLE
+        }
+    }
+
+    class ListItemDiffCallback : DiffUtil.ItemCallback<ListItem>() {
+        override fun areItemsTheSame(
+            oldItem: ListItem,
+            newItem: ListItem,
+        ): Boolean {
+            return when {
+                oldItem is ListItem.SystemRow && newItem is ListItem.SystemRow -> oldItem.id == newItem.id
+                oldItem is ListItem.UserList && newItem is ListItem.UserList -> oldItem.listWithCount.list.id == newItem.listWithCount.list.id
+                else -> false
+            }
+        }
+
+        override fun areContentsTheSame(
+            oldItem: ListItem,
+            newItem: ListItem,
+        ): Boolean {
+            return oldItem == newItem
         }
     }
 
@@ -191,7 +276,7 @@ class ListsFragment : Fragment() {
         val radioGroupColors = sheetView.findViewById<android.widget.RadioGroup>(R.id.radioGroupColors)
         val btnCreateList = sheetView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
 
-        val emojis = listOf("📁", "📚", "💼", "🤖", "🎯", "⭐", "🔬", "🎨", "🌐", "📝", "🏠", "💡", "🔥", "🌱", "🎵", "🎮")
+        val emojis = listOf("\uD83D\uDCC1", "\uD83D\uDCDA", "\uD83D\uDCBC", "\uD83E\uDD16", "\uD83C\uDFAF", "\u2B50", "\uD83D\uDD2C", "\uD83C\uDFA8", "\uD83C\uDF10", "\uD83D\uDCDD", "\uD83C\uDFE0", "\uD83D\uDCA1", "\uD83D\uDD25", "\uD83C\uDF31", "\uD83C\uDFB5", "\uD83C\uDFAE")
         val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
 
         emojis.forEach { emoji ->
@@ -227,12 +312,83 @@ class ListsFragment : Fragment() {
             val name = etListName.text.toString().trim()
             if (name.isNotEmpty()) {
                 val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
-                val emoji = selectedEmojiChip?.text?.toString() ?: "📁"
+                val emoji = selectedEmojiChip?.text?.toString() ?: "\uD83D\uDCC1"
 
                 val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
                 val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
 
                 viewModel.createList(name, emoji, color)
+                sheet.dismiss()
+            }
+        }
+
+        sheet.show()
+    }
+
+    private fun showEditListSheet(list: ArticleList) {
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_create_list, null)
+        sheet.setContentView(sheetView)
+
+        val header = (sheetView as? ViewGroup)?.getChildAt(0) as? TextView
+        header?.text = "Edit List"
+
+        val etListName = sheetView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etListName)
+        etListName.setText(list.name)
+
+        val chipGroupEmojis = sheetView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupEmojis)
+        val radioGroupColors = sheetView.findViewById<android.widget.RadioGroup>(R.id.radioGroupColors)
+
+        val emojis = listOf("\uD83D\uDCC1", "\uD83D\uDCDA", "\uD83D\uDCBC", "\uD83E\uDD16", "\uD83C\uDFAF", "\u2B50", "\uD83D\uDD2C", "\uD83C\uDFA8", "\uD83C\uDF10", "\uD83D\uDCDD", "\uD83C\uDFE0", "\uD83D\uDCA1", "\uD83D\uDD25", "\uD83C\uDF31", "\uD83C\uDFB5", "\uD83C\uDFAE")
+        val colors = listOf("#6C63FF", "#FF6584", "#4CAF50", "#FF9800", "#00BCD4", "#E91E63", "#9C27B0", "#3F51B5")
+
+        chipGroupEmojis.removeAllViews()
+        emojis.forEach { emoji ->
+            val chip =
+                com.google.android.material.chip.Chip(requireContext()).apply {
+                    text = emoji
+                    isCheckable = true
+                    setChipDrawable(
+                        com.google.android.material.chip.ChipDrawable.createFromAttributes(
+                            requireContext(),
+                            null,
+                            0,
+                            com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice,
+                        ),
+                    )
+                }
+            chipGroupEmojis.addView(chip)
+            if (emoji == list.emoji) chip.isChecked = true
+        }
+
+        radioGroupColors.removeAllViews()
+        colors.forEachIndexed { _, colorHex ->
+            val rb =
+                android.widget.RadioButton(requireContext()).apply {
+                    buttonTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorHex))
+                    tag = colorHex
+                }
+            radioGroupColors.addView(rb)
+            if (colorHex == list.colorHex) rb.isChecked = true
+        }
+
+        if (chipGroupEmojis.checkedChipId == View.NO_ID && chipGroupEmojis.childCount > 0)
+            (chipGroupEmojis.getChildAt(0) as com.google.android.material.chip.Chip).isChecked = true
+        if (radioGroupColors.checkedRadioButtonId == View.NO_ID && radioGroupColors.childCount > 0)
+            (radioGroupColors.getChildAt(0) as android.widget.RadioButton).isChecked = true
+
+        val btnCreateList = sheetView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCreateList)
+        btnCreateList.text = "Save"
+        btnCreateList.setOnClickListener {
+            val name = etListName.text.toString().trim()
+            if (name.isNotEmpty()) {
+                val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
+                val emoji = selectedEmojiChip?.text?.toString() ?: "\uD83D\uDCC1"
+
+                val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
+                val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
+
+                viewModel.updateList(list.copy(name = name, emoji = emoji, colorHex = color))
                 sheet.dismiss()
             }
         }

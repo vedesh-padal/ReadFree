@@ -60,6 +60,10 @@ class ArticleListViewModel(
         _articles = articleRepo.getOffline()
     }
 
+    fun setUnsortedFilter() {
+        _articles = articleRepo.getUnsorted()
+    }
+
     fun setReadState(articleUrl: String, state: ReadState) {
         viewModelScope.launch { articleRepo.updateReadState(articleUrl, state) }
     }
@@ -135,6 +139,7 @@ class ArticleListFragment : Fragment() {
         val tagName = arguments?.getString("tagName")
         val title = arguments?.getString("title") ?: "Articles"
         val isOffline = arguments?.getBoolean("isOffline", false) ?: false
+        val isUnsorted = arguments?.getBoolean("isUnsorted", false) ?: false
 
         binding.toolbar.title = title
         binding.toolbar.setNavigationOnClickListener {
@@ -145,6 +150,7 @@ class ArticleListFragment : Fragment() {
             listId != -1L -> viewModel.setListFilter(listId)
             tagName != null -> viewModel.setTagFilter(tagName)
             isOffline -> viewModel.setOfflineFilter()
+            isUnsorted -> viewModel.setUnsortedFilter()
         }
 
         setupRecyclerView()
