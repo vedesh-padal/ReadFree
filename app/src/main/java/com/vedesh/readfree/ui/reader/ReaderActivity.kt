@@ -331,24 +331,27 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         if (url != null) {
             binding.urlBar.text = UrlUtils.formatUrlForDisplay(url)
 
-            // Extract title and set up scroll tracking
+            // Extract title and set up scroll tracking (throttled at 200ms)
             binding.webView.evaluateJavascript(
                 """
                 (function() {
-                    let debounceTimer;
+                    var lastReport = 0;
+                    var THROTTLE = 200;
                     function reportScroll() {
                         var maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+                        if (maxScroll <= 0) return;
                         var currentScroll = window.scrollY;
-                        var percentage = maxScroll > 0 ? (currentScroll / maxScroll) * 100 : 0;
+                        var percentage = Math.min(100, Math.round((currentScroll / maxScroll) * 100));
                         AndroidJS.onScrollProgress(Math.round(currentScroll), percentage);
                     }
                     window.addEventListener('scroll', function() {
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(reportScroll, 500);
-                    });
+                        var now = Date.now();
+                        if (now - lastReport < THROTTLE) return;
+                        lastReport = now;
+                        reportScroll();
+                    }, { passive: true });
                     window.addEventListener('resize', function() {
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(reportScroll, 300);
+                        reportScroll();
                     });
                     return document.title;
                 })();
