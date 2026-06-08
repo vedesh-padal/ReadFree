@@ -53,7 +53,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Share any Medium link to this app,\nor paste one below."
+            android:text="Bypass the paywall.\nShare a link from any app or paste it below."
             android:textSize="14sp"
             android:textColor="@color/text_secondary"
             android:gravity="center"
@@ -63,6 +63,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Paste Medium URL here"
+            app:endIconMode="clear_text"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -88,7 +89,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="48dp"
-            android:text="Tip: Share from Chrome → tap ReadFree"
+            android:text="Tip: Share directly from the Medium app or your browser."
             android:textSize="12sp"
             android:textColor="@color/text_secondary" />
 

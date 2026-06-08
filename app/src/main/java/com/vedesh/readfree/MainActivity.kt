@@ -170,14 +170,23 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                 val clip = android.content.ClipData.newPlainText("Article Link", url)
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(this, "Link copied", Toast.LENGTH_SHORT).show()
+                
+                // Android 13+ shows its own visual clipboard overlay.
+                // Showing a toast here causes duplicate UI.
+                if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
+                    Toast.makeText(this, "Link copied", Toast.LENGTH_SHORT).show()
+                }
             }
         }
         binding.btnOpenBrowser.setOnClickListener {
             binding.webView.url?.let { openInBrowser(it) }
         }
         binding.btnBack.setOnClickListener {
-            if (binding.webView.canGoBack()) binding.webView.goBack()
+            if (binding.webView.canGoBack()) {
+                binding.webView.goBack()
+            } else {
+                showHomeScreen()
+            }
         }
         binding.btnSettings.setOnClickListener {
             showSettingsSheet()
