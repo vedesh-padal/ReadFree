@@ -188,7 +188,8 @@
                     android:layout_height="32dp"
                     android:src="@android:drawable/ic_menu_close_clear_cancel"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Dismiss" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

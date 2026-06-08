@@ -16,6 +16,7 @@ import com.google.android.material.chip.ChipGroup
 import com.vedesh.readfree.R
 import com.vedesh.readfree.ReadFreeApp
 import com.vedesh.readfree.ui.ViewModelFactory
+import com.vedesh.readfree.util.tooltipFromContentDescription
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -74,8 +75,9 @@ class TagsFragment : Fragment() {
             }
         }
 
-        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddTag).setOnClickListener {
-            showCreateTagDialog()
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddTag).apply {
+            setOnClickListener { showCreateTagDialog() }
+            tooltipFromContentDescription()
         }
     }
 

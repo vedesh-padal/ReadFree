@@ -29,6 +29,7 @@ import com.vedesh.readfree.ReadFreeApp
 import com.vedesh.readfree.ReadFreeWebViewClient
 import com.vedesh.readfree.UrlUtils
 import com.vedesh.readfree.databinding.ActivityReaderBinding
+import com.vedesh.readfree.util.tooltipFromContentDescription
 import com.vedesh.readfree.databinding.BottomSheetSaveBinding
 import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 import com.vedesh.readfree.ui.ViewModelFactory
@@ -156,6 +157,18 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 }
             }
         })
+
+        // Long-press tooltips for icon-only buttons
+        with(binding) {
+            btnBack.tooltipFromContentDescription()
+            btnReaderMore.tooltipFromContentDescription()
+            btnBottomBookmark.tooltipFromContentDescription()
+            btnBottomMarkRead.tooltipFromContentDescription()
+            btnBottomRaindrop.tooltipFromContentDescription()
+            btnBottomBrowser.tooltipFromContentDescription()
+            btnBottomSettings.tooltipFromContentDescription()
+            btnBannerDismiss.tooltipFromContentDescription()
+        }
 
         handleIntent(intent)
     }

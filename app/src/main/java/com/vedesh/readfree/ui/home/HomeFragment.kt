@@ -28,6 +28,7 @@ import com.vedesh.readfree.data.model.ArticleWithTags
 import com.vedesh.readfree.databinding.BottomSheetSettingsBinding
 import com.vedesh.readfree.databinding.FragmentHomeBinding
 import com.vedesh.readfree.ui.ViewModelFactory
+import com.vedesh.readfree.util.tooltipFromContentDescription
 import com.vedesh.readfree.ui.reader.ReaderActivity
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -74,6 +75,16 @@ class HomeFragment : Fragment() {
 
         binding.btnHomeTags.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_tagsFragment)
+        }
+
+        // Long-press tooltips for icon-only buttons
+        with(binding) {
+            btnHomeSearchToggle.tooltipFromContentDescription()
+            btnHomeLists.tooltipFromContentDescription()
+            btnHomeTags.tooltipFromContentDescription()
+            btnHomeSettings.tooltipFromContentDescription()
+            btnSearchBack.tooltipFromContentDescription()
+            btnSearchClear.tooltipFromContentDescription()
         }
     }
 

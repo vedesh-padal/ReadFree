@@ -23,6 +23,7 @@ import com.vedesh.readfree.R
 import com.vedesh.readfree.ReadFreeApp
 import com.vedesh.readfree.data.db.entity.ArticleList
 import com.vedesh.readfree.ui.ViewModelFactory
+import com.vedesh.readfree.util.tooltipFromContentDescription
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Collections
@@ -53,6 +54,9 @@ class ListsFragment : Fragment() {
         toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
         }
+
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddList)
+            .tooltipFromContentDescription()
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerViewLists)
 

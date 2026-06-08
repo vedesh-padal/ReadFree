@@ -36,7 +36,8 @@
                         android:layout_height="48dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@drawable/ic_search"
-                        android:tint="@color/text_primary" />
+                        android:tint="@color/text_primary"
+                        android:contentDescription="Search" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/btnHomeLists"
@@ -44,7 +45,8 @@
                         android:layout_height="48dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@drawable/ic_lists"
-                        android:tint="@color/text_primary" />
+                        android:tint="@color/text_primary"
+                        android:contentDescription="Lists" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/btnHomeTags"
@@ -52,7 +54,8 @@
                         android:layout_height="48dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@drawable/ic_tags"
-                        android:tint="@color/text_primary" />
+                        android:tint="@color/text_primary"
+                        android:contentDescription="Tags" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/btnHomeSettings"
@@ -60,7 +63,8 @@
                         android:layout_height="48dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@drawable/ic_settings"
-                        android:tint="@color/text_primary" />
+                        android:tint="@color/text_primary"
+                        android:contentDescription="Settings" />
                 </LinearLayout>
 
             </androidx.appcompat.widget.Toolbar>
@@ -82,7 +86,8 @@
                     android:layout_height="48dp"
                     android:src="@drawable/ic_back"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Back" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSearchScope"
@@ -112,7 +117,8 @@
                     android:layout_height="48dp"
                     android:src="@android:drawable/ic_menu_close_clear_cancel"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Clear" />
             </LinearLayout>
         </FrameLayout>
 

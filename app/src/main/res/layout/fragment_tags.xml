@@ -54,6 +54,7 @@
         android:layout_margin="24dp"
         app:srcCompat="@drawable/ic_add"
         app:backgroundTint="@color/accent"
-        app:tint="@color/bg_primary" />
+        app:tint="@color/bg_primary"
+        android:contentDescription="Add Tag" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
