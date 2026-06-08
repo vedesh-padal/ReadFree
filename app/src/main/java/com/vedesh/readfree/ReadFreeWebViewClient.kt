@@ -1,6 +1,7 @@
 package com.vedesh.readfree
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
@@ -37,6 +38,9 @@ class ReadFreeWebViewClient(
         fun onExternalUrlRequested(url: String)
     }
 
+    /** The article URL being read. Used to keep same-domain navigation inside the WebView. */
+    var currentArticleUrl: String = ""
+
     override fun shouldOverrideUrlLoading(
         view: WebView?,
         request: WebResourceRequest?,
@@ -47,12 +51,13 @@ class ReadFreeWebViewClient(
         if (scheme != "http" && scheme != "https") return false
         // Mirror URLs and known Medium domains stay inside the WebView
         val isMirror = url.startsWith(mirrors.getActiveMirror()) || url.startsWith(MirrorRepository.DEFAULT_MIRROR)
-        return if (isMirror || UrlUtils.isMediumDomain(url)) {
-            false
-        } else {
-            listener.onExternalUrlRequested(url)
-            true
-        }
+        if (isMirror || UrlUtils.isMediumDomain(url)) return false
+        // Same-domain navigation stays inside the WebView (handles server-side redirects)
+        val articleHost = Uri.parse(currentArticleUrl).host
+        if (articleHost != null && request?.url?.host == articleHost) return false
+        // Truly external URL → open in browser
+        listener.onExternalUrlRequested(url)
+        return true
     }
 
     override fun onPageStarted(

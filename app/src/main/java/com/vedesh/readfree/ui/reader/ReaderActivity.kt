@@ -46,6 +46,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     }
 
     private var currentArticleUrl: String = ""
+    private var webViewClient: ReadFreeWebViewClient? = null
     private var saveSheet: BottomSheetDialog? = null
     private var saveBinding: BottomSheetSaveBinding? = null
 
@@ -304,7 +305,10 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             }
             addJavascriptInterface(ReadFreeJSInterface(), "AndroidJS")
-            webViewClient = ReadFreeWebViewClient(mirrors, this@ReaderActivity)
+            ReadFreeWebViewClient(mirrors, this@ReaderActivity).also { client ->
+                this@ReaderActivity.webViewClient = client
+                webViewClient = client
+            }
         }
     }
 
@@ -486,6 +490,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     private fun loadArticle(originalUrl: String) {
         val cleanUrl = originalUrl.trim()
         currentArticleUrl = cleanUrl
+        webViewClient?.currentArticleUrl = cleanUrl
         mirrors.resetMirrorIndex()
 
         binding.errorView.visibility = View.GONE
