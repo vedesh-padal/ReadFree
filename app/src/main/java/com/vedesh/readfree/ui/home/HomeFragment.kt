@@ -383,6 +383,19 @@ class HomeFragment : Fragment() {
 
         val savedMode = app.settingsRepository.getRaindropSaveMode()
         android.util.Log.d("ReadFreeSettings", "Loaded save mode: '$savedMode'")
+
+        // Clear any auto-checked state and set the correct radio button directly
+        // to avoid RadioGroup.check() no-op bugs (b/77937021)
+        sheetBinding.radioRaindropApi.isChecked = false
+        sheetBinding.radioRaindropIntent.isChecked = false
+        sheetBinding.root.post {
+            if (app.settingsRepository.getRaindropSaveMode() == "API") {
+                sheetBinding.radioRaindropApi.isChecked = true
+            } else {
+                sheetBinding.radioRaindropIntent.isChecked = true
+            }
+        }
+
         sheetBinding.radioGroupRaindropMode.setOnCheckedChangeListener { _, id ->
             val rb = sheetBinding.root.findViewById<RadioButton>(id)
             android.util.Log.d("ReadFreeSettings", "Radio changed: id=$id, tag=${rb?.tag}")
@@ -404,12 +417,6 @@ class HomeFragment : Fragment() {
                     )
                 }
             }
-        }
-
-        if (app.settingsRepository.getRaindropSaveMode() == "API") {
-            sheetBinding.radioGroupRaindropMode.check(R.id.radioRaindropApi)
-        } else {
-            sheetBinding.radioGroupRaindropMode.check(R.id.radioRaindropIntent)
         }
 
         // Offline Storage section
