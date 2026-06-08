@@ -1,16 +1,20 @@
-name: Build APK
+name: Build and Release APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   # Also lets you trigger manually from GitHub UI
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to create a release
 
     steps:
       - name: Checkout code
@@ -29,9 +33,23 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK artifact
+      - name: Upload APK artifact (Workflow)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: ReadFree-debug
+          name: readfree-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Rename APK for Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION_TAG=${GITHUB_REF#refs/tags/}
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/readfree-${VERSION_TAG}.apk
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/debug/readfree-*.apk
+          generate_release_notes: true
