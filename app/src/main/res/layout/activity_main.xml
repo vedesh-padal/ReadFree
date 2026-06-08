@@ -11,7 +11,7 @@
         android:id="@+id/btnHomeSettings"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:src="@android:drawable/ic_menu_preferences"
+        android:src="@drawable/ic_settings_24"
         android:background="?attr/selectableItemBackgroundBorderless"
         app:tint="@color/text_secondary"
         android:contentDescription="Settings"
@@ -119,7 +119,7 @@
                 android:id="@+id/btnBack"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@android:drawable/ic_media_previous"
+                android:src="@drawable/ic_arrow_back_24"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 app:tint="@color/text_primary"
                 android:contentDescription="Back" />
@@ -136,22 +136,30 @@
                 android:ellipsize="middle"
                 android:text="Loading…" />
 
-            <com.google.android.material.button.MaterialButton
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnCopyLink"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_content_copy_24"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Copy Link" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/btnOpenBrowser"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Browser"
-                android:textSize="11sp"
-                android:paddingHorizontal="12dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                app:strokeColor="@color/accent"
-                android:textColor="@color/accent" />
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_open_in_browser_24"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Open in Browser"
+                android:layout_marginStart="4dp" />
 
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/btnSettings"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_preferences"
+                android:src="@drawable/ic_settings_24"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 app:tint="@color/text_secondary"
                 android:contentDescription="Settings"

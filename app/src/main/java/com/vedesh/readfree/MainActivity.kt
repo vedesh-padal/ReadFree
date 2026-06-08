@@ -164,6 +164,15 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     // ── Toolbar ───────────────────────────────────────────────────────────────
 
     private fun setupToolbar() {
+        binding.btnCopyLink.setOnClickListener {
+            val url = binding.webView.url ?: currentArticleUrl
+            if (url.isNotEmpty()) {
+                val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Article Link", url)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(this, "Link copied", Toast.LENGTH_SHORT).show()
+            }
+        }
         binding.btnOpenBrowser.setOnClickListener {
             binding.webView.url?.let { openInBrowser(it) }
         }
