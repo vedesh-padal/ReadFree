@@ -253,6 +253,9 @@ class MainActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     // ── Article loading ───────────────────────────────────────────────────────
 
     private fun loadArticle(originalUrl: String) {
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
+
         val cleanUrl = originalUrl.trim()
         currentArticleUrl = cleanUrl
         mirrors.resetMirrorIndex()
