@@ -29,13 +29,32 @@ object UrlUtils {
     }
 
     /**
-     * Returns true if [url] belongs to a known Medium publication domain.
-     * Used by the WebViewClient to decide whether to intercept navigation.
+     * Every Medium article URL ends with `/<slug>-<hexId>`, where hexId is the
+     * article's unique 12-character hex identifier (e.g.
+     * `...performance-830999c13919`). This is true even on custom domains.
+     */
+    private val MEDIUM_ARTICLE_ID_PATTERN = Regex("-[a-f0-9]{12}\$", RegexOption.IGNORE_CASE)
+
+    /**
+     * Returns true if [url] belongs to a Medium publication — either a known
+     * Medium host (medium.com, etc.) or a custom domain whose URL path matches
+     * the Medium article pattern (/<slug>-<hexId>).
+     *
+     * Used to decide whether to proxy the URL through Freedium.
      */
     fun isMediumDomain(url: String): Boolean {
         return try {
-            val host = Uri.parse(url).host ?: return false
-            KNOWN_MEDIUM_HOSTS.any { host.endsWith(it) }
+            val uri = Uri.parse(url)
+            val host = uri.host ?: return false
+
+            // Fast path: known Medium hosts
+            if (KNOWN_MEDIUM_HOSTS.any { host.endsWith(it) }) return true
+
+            // Medium custom domains (e.g. towardsdev.com) don't match the host list,
+            // but every Medium article path ends with /<slug>-<hexId>.
+            val path = uri.path ?: return false
+            val lastSegment = path.trimEnd('/').split('/').lastOrNull() ?: return false
+            MEDIUM_ARTICLE_ID_PATTERN.containsMatchIn(lastSegment)
         } catch (e: Exception) {
             false
         }
