@@ -46,7 +46,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     }
 
     private var currentArticleUrl: String = ""
-    private var webViewClient: ReadFreeWebViewClient? = null
     private var saveSheet: BottomSheetDialog? = null
     private var saveBinding: BottomSheetSaveBinding? = null
 
@@ -305,10 +304,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                 cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             }
             addJavascriptInterface(ReadFreeJSInterface(), "AndroidJS")
-            ReadFreeWebViewClient(mirrors, this@ReaderActivity).also { client ->
-                this@ReaderActivity.webViewClient = client
-                webViewClient = client
-            }
+            webViewClient = ReadFreeWebViewClient(this@ReaderActivity)
         }
     }
 
@@ -403,10 +399,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             .show()
     }
 
-    override fun onExternalUrlRequested(url: String) {
-        openInBrowser(url)
-    }
-
     private fun tryNextMirrorOrShowError() {
         binding.loadingView.visibility = View.GONE
         if (UrlUtils.isMediumDomain(currentArticleUrl) && mirrors.tryNextMirror()) {
@@ -490,7 +482,6 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
     private fun loadArticle(originalUrl: String) {
         val cleanUrl = originalUrl.trim()
         currentArticleUrl = cleanUrl
-        webViewClient?.currentArticleUrl = cleanUrl
         mirrors.resetMirrorIndex()
 
         binding.errorView.visibility = View.GONE

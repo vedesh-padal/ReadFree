@@ -1,7 +1,6 @@
 package com.vedesh.readfree
 
 import android.graphics.Bitmap
-import android.net.Uri
 import android.net.http.SslError
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
@@ -17,11 +16,9 @@ import android.webkit.WebViewClient
  * it delegates all significant events to a [Listener] interface. This makes
  * the client independently testable and swappable.
  *
- * @param mirrors Used to determine which URLs should stay inside the WebView.
  * @param listener Receives page lifecycle and error events.
  */
 class ReadFreeWebViewClient(
-    private val mirrors: MirrorRepository,
     private val listener: Listener,
 ) : WebViewClient() {
     interface Listener {
@@ -34,30 +31,15 @@ class ReadFreeWebViewClient(
         fun onMainFrameHttpError(statusCode: Int)
 
         fun onSslError(handler: SslErrorHandler?)
-
-        fun onExternalUrlRequested(url: String)
     }
-
-    /** The article URL being read. Used to keep same-domain navigation inside the WebView. */
-    var currentArticleUrl: String = ""
 
     override fun shouldOverrideUrlLoading(
         view: WebView?,
         request: WebResourceRequest?,
     ): Boolean {
-        val url = request?.url?.toString() ?: return false
-        val scheme = request?.url?.scheme ?: return false
-        // Only handle http/https externally; ignore cid:, file:, data: etc.
-        if (scheme != "http" && scheme != "https") return false
-        // Mirror URLs and known Medium domains stay inside the WebView
-        val isMirror = url.startsWith(mirrors.getActiveMirror()) || url.startsWith(MirrorRepository.DEFAULT_MIRROR)
-        if (isMirror || UrlUtils.isMediumDomain(url)) return false
-        // Same-domain navigation stays inside the WebView (handles server-side redirects)
-        val articleHost = Uri.parse(currentArticleUrl).host
-        if (articleHost != null && request?.url?.host == articleHost) return false
-        // Truly external URL → open in browser
-        listener.onExternalUrlRequested(url)
-        return true
+        // All navigation stays inside the WebView.
+        // The bottom bar "Open in Browser" button is the only way to open externally.
+        return false
     }
 
     override fun onPageStarted(
