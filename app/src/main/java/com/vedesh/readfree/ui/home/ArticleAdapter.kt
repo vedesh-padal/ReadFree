@@ -1,7 +1,6 @@
 package com.vedesh.readfree.ui.home
 
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
@@ -51,38 +50,24 @@ class ArticleAdapter(
             // --- Read state visual ---
             when (item.article.readState) {
                 ReadState.UNREAD -> {
-                    // Bold title, accent dot (full size)
                     binding.tvTitle.setTypeface(null, Typeface.BOLD)
                     binding.tvTitle.alpha = 1f
-                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     binding.readStateIndicator.visibility = View.VISIBLE
                     binding.ivReadCheck.visibility = View.GONE
                     binding.readStateIndicator.backgroundTintList =
                         ContextCompat.getColorStateList(binding.root.context, R.color.read_state_unread)
-                    val lp = binding.readStateIndicator.layoutParams
-                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_unread)
-                    lp.height = lp.width
-                    binding.readStateIndicator.layoutParams = lp
                 }
                 ReadState.READING -> {
-                    // Normal weight, smaller dot
                     binding.tvTitle.setTypeface(null, Typeface.NORMAL)
                     binding.tvTitle.alpha = 1f
-                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     binding.readStateIndicator.visibility = View.VISIBLE
                     binding.ivReadCheck.visibility = View.GONE
                     binding.readStateIndicator.backgroundTintList =
                         ContextCompat.getColorStateList(binding.root.context, R.color.read_state_reading)
-                    val lp = binding.readStateIndicator.layoutParams
-                    lp.width = binding.root.context.resources.getDimensionPixelSize(R.dimen.dot_reading)
-                    lp.height = lp.width
-                    binding.readStateIndicator.layoutParams = lp
                 }
                 ReadState.READ -> {
-                    // Dimmed, normal weight, checkmark replaces dot
                     binding.tvTitle.setTypeface(null, Typeface.NORMAL)
                     binding.tvTitle.alpha = 0.45f
-                    binding.tvTitle.paintFlags = binding.tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                     binding.readStateIndicator.visibility = View.GONE
                     binding.ivReadCheck.visibility = View.VISIBLE
                 }
@@ -132,12 +117,16 @@ class ArticleAdapter(
                 binding.tagsScrollView.visibility = View.VISIBLE
                 item.tags.forEach { tag ->
                     val chip = Chip(binding.root.context).apply {
-                        text = "#${tag.name}"
-                        textSize = 9f
+                        text = tag.name
+                        textSize = 11f
                         isClickable = false
-                        chipMinHeight = 20f
-                        chipStartPadding = 4f
-                        chipEndPadding = 4f
+                        chipMinHeight = 24f
+                        chipStartPadding = 8f
+                        chipEndPadding = 8f
+                        setChipBackgroundColorResource(android.R.color.transparent)
+                        chipStrokeWidth = 1f
+                        setChipStrokeColorResource(R.color.text_tertiary)
+                        setTextColor(ContextCompat.getColor(binding.root.context, R.color.text_tertiary))
                     }
                     binding.chipGroupTags.addView(chip)
                 }

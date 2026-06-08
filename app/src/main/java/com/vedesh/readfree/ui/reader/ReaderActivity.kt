@@ -671,6 +671,13 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             true
         }
 
+        // Tap a suggestion: add the tag immediately
+        saveBinding?.etAddTag?.setOnItemClickListener { parent, _, position, _ ->
+            val tagName = parent.getItemAtPosition(position) as String
+            addTag(tagName)
+            saveBinding?.etAddTag?.setText("")
+        }
+
         // Populate lists
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -59,7 +59,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
+        android:minHeight="56dp"
         android:hint="Add tag (comma to save)"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         app:hintTextAppearance="@style/TextAppearance.MaterialComponents.Caption"
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:inputType="text"
             android:textSize="14sp"
-            android:maxLines="1"
+            android:singleLine="true"
             android:textColor="@color/text_primary" />
     </com.google.android.material.textfield.TextInputLayout>
 

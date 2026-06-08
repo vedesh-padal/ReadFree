@@ -3,6 +3,7 @@ package com.vedesh.readfree.ui.lists
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -92,7 +93,7 @@ class ListsFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        val itemTouchHelper =
+        val dragHelper =
             ItemTouchHelper(
                 object : ItemTouchHelper.SimpleCallback(
                     ItemTouchHelper.UP or ItemTouchHelper.DOWN,
@@ -153,7 +154,8 @@ class ListsFragment : Fragment() {
                     }
                 },
             )
-        itemTouchHelper.attachToRecyclerView(recyclerView)
+        dragHelper.attachToRecyclerView(recyclerView)
+        adapter.setDragHelper(dragHelper)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -172,6 +174,12 @@ class ListsFragment : Fragment() {
         private val onUserListClick: (ListItem.UserList) -> Unit,
         private val onUserListLongClick: (ListItem.UserList) -> Unit,
     ) : ListAdapter<ListItem, RecyclerView.ViewHolder>(ListItemDiffCallback()) {
+        private var dragHelper: ItemTouchHelper? = null
+
+        fun setDragHelper(helper: ItemTouchHelper) {
+            dragHelper = helper
+        }
+
         override fun getItemViewType(position: Int): Int {
             return when (getItem(position)) {
                 is ListItem.SystemRow -> VIEW_TYPE_SYSTEM
@@ -190,7 +198,9 @@ class ListsFragment : Fragment() {
                 }
                 else -> {
                     val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list_row, parent, false)
-                    UserListViewHolder(view, onUserListClick, onUserListLongClick)
+                    UserListViewHolder(view, onUserListClick, onUserListLongClick).also {
+                        it.setDragHelper(dragHelper)
+                    }
                 }
             }
         }
@@ -234,6 +244,11 @@ class ListsFragment : Fragment() {
         private val tvListName: TextView = view.findViewById(R.id.tvListName)
         private val tvCount: TextView = view.findViewById(R.id.tvCount)
         private val ivDragHandle: ImageView = view.findViewById(R.id.ivDragHandle)
+        private var dragHelper: ItemTouchHelper? = null
+
+        fun setDragHelper(helper: ItemTouchHelper?) {
+            dragHelper = helper
+        }
 
         fun bind(item: ListItem.UserList) {
             val listWithCount = item.listWithCount
@@ -247,6 +262,12 @@ class ListsFragment : Fragment() {
             tvListName.setTextColor(Color.parseColor(listWithCount.list.colorHex))
             tvCount.text = listWithCount.articleCount.toString()
             ivDragHandle.visibility = View.VISIBLE
+            ivDragHandle.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    dragHelper?.startDrag(this)
+                }
+                false
+            }
         }
     }
 
@@ -309,14 +330,13 @@ class ListsFragment : Fragment() {
             radioGroupColors.addView(rb)
         }
 
-        if (chipGroupEmojis.childCount > 0) (chipGroupEmojis.getChildAt(0) as com.google.android.material.chip.Chip).isChecked = true
         if (radioGroupColors.childCount > 0) (radioGroupColors.getChildAt(0) as android.widget.RadioButton).isChecked = true
 
         btnCreateList.setOnClickListener {
             val name = etListName.text.toString().trim()
             if (name.isNotEmpty()) {
                 val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
-                val emoji = selectedEmojiChip?.text?.toString() ?: "\uD83D\uDCC1"
+                val emoji = selectedEmojiChip?.text?.toString() ?: ""
 
                 val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
                 val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
@@ -376,8 +396,6 @@ class ListsFragment : Fragment() {
             if (colorHex == list.colorHex) rb.isChecked = true
         }
 
-        if (chipGroupEmojis.checkedChipId == View.NO_ID && chipGroupEmojis.childCount > 0)
-            (chipGroupEmojis.getChildAt(0) as com.google.android.material.chip.Chip).isChecked = true
         if (radioGroupColors.checkedRadioButtonId == View.NO_ID && radioGroupColors.childCount > 0)
             (radioGroupColors.getChildAt(0) as android.widget.RadioButton).isChecked = true
 
@@ -387,7 +405,7 @@ class ListsFragment : Fragment() {
             val name = etListName.text.toString().trim()
             if (name.isNotEmpty()) {
                 val selectedEmojiChip = chipGroupEmojis.findViewById<com.google.android.material.chip.Chip>(chipGroupEmojis.checkedChipId)
-                val emoji = selectedEmojiChip?.text?.toString() ?: "\uD83D\uDCC1"
+                val emoji = selectedEmojiChip?.text?.toString() ?: ""
 
                 val selectedColorRb = radioGroupColors.findViewById<android.widget.RadioButton>(radioGroupColors.checkedRadioButtonId)
                 val color = selectedColorRb?.tag?.toString() ?: "#6C63FF"
