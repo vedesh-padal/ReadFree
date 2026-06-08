@@ -2,9 +2,9 @@
 
 Bypass the paywall and read Medium articles for free. Share a link from any app or paste it directly, and ReadFree proxies it through a Freedium mirror to serve a fast, clean, ad-free reading experience.
 
-| Home Screen | Reader View |
-| :---: | :---: |
-| <img src="assets/screenshot_home.png" width="250" alt="Home Screen"> | <img src="assets/screenshot_reader.png" width="250" alt="Reader View"> |
+|                             Home Screen                              |                              Reader View                               |
+| :------------------------------------------------------------------: | :--------------------------------------------------------------------: |
+| <img src="assets/screenshot_home.jpg" width="250" alt="Home Screen"> | <img src="assets/screenshot_reader.jpg" width="250" alt="Reader View"> |
 
 ---
 
