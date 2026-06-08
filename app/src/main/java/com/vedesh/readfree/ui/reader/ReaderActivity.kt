@@ -624,20 +624,32 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
             }
         }
 
+        fun addTag(raw: String) {
+            val text = raw.trim().lowercase()
+            if (text.isNotEmpty() && text.length < 30 && selectedTags.add(text)) {
+                val chip = com.google.android.material.chip.Chip(this)
+                chip.text = text
+                chip.isCloseIconVisible = true
+                chip.setOnCloseIconClickListener {
+                    selectedTags.remove(chip.text.toString())
+                    saveBinding?.chipGroupTags?.removeView(chip)
+                }
+                saveBinding?.chipGroupTags?.addView(chip)
+            }
+        }
+
+        fun flushTagInput() {
+            val text = saveBinding?.etAddTag?.text?.toString() ?: return
+            if (text.isBlank()) return
+            text.split(",").forEach { addTag(it) }
+            saveBinding?.etAddTag?.setText("")
+        }
+
         // Set up Tag input
         saveBinding?.etAddTag?.setOnEditorActionListener { v, _, _ ->
-            val text = v.text.toString().trim()
-            if (text.isNotEmpty() && text.length < 30) {
-                if (selectedTags.add(text.lowercase())) {
-                    val chip = com.google.android.material.chip.Chip(this)
-                    chip.text = text.lowercase()
-                    chip.isCloseIconVisible = true
-                    chip.setOnCloseIconClickListener {
-                        selectedTags.remove(chip.text.toString())
-                        saveBinding?.chipGroupTags?.removeView(chip)
-                    }
-                    saveBinding?.chipGroupTags?.addView(chip)
-                }
+            val text = v.text.toString()
+            if (text.isNotBlank()) {
+                text.split(",").forEach { addTag(it) }
                 v.text = ""
             }
             true
@@ -698,6 +710,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         }
 
         saveBinding?.btnSaveAndClose?.setOnClickListener {
+            flushTagInput()
             lifecycleScope.launch {
                 viewModel.saveArticle(
                     currentArticleUrl,
@@ -713,6 +726,7 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
         }
 
         saveBinding?.btnReadNow?.setOnClickListener {
+            flushTagInput()
             viewModel.saveArticle(
                 currentArticleUrl,
                 saveBinding?.tvSaveTitle?.text.toString(),
