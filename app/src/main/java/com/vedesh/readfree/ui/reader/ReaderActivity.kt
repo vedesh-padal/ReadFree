@@ -94,8 +94,15 @@ class ReaderActivity : AppCompatActivity(), ReadFreeWebViewClient.Listener {
                     } else {
                         com.google.android.material.snackbar.Snackbar.make(binding.root, "Failed to save to Raindrop", com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
                             .setAction("Retry") {
-                                app.saveToRaindrop(this, url, title)
-                                com.google.android.material.snackbar.Snackbar.make(binding.root, "Sent to Raindrop", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show()
+                                app.saveToRaindrop(this, url, title) { retrySuccess ->
+                                    runOnUiThread {
+                                        com.google.android.material.snackbar.Snackbar.make(
+                                            binding.root,
+                                            if (retrySuccess) "Sent to Raindrop" else "Failed to save to Raindrop",
+                                            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
                             }.show()
                     }
                 }
